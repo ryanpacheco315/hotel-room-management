@@ -1,0 +1,11 @@
+services:
+  app:
+    build: .
+    container_name: hotel-app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5432/hotel_db
+      SPRING_DATASOURCE_USERNAME: hotel_user
+      SPRING_DATASOURCE_PASSWORD: hotel_pass
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update

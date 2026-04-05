@@ -1,0 +1,5 @@
+docker exec -it hotel-sqlserver /opt/mssql-tools/bin/sqlcmd \
+-S localhost -U sa -P "YourStrong!Pass123" \
+-Q "CREATE DATABASE hotel_db"
+
+docker compose up --build
