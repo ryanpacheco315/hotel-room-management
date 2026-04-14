@@ -96,4 +96,10 @@ public class RoomService {
         room.setMoney(money);
         return roomRepository.save(room);
     }
+
+    @Transactional
+    public void deleteRoom(Long rid) {
+        Room room = findById(rid);
+        roomRepository.delete(room);
+    }
 }

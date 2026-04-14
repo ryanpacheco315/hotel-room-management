@@ -130,6 +130,33 @@ public class TransactionService {
         return transactionRepository.save(transaction);
     }
 
+    @Transactional
+    public Transaction updateTransaction(Long tid, TransactionDTO dto) {
+        Transaction transaction = findById(tid);
+        
+        if (dto.getStartDate() != null) {
+            transaction.setStartDate(dto.getStartDate());
+        }
+        if (dto.getEndDate() != null) {
+            transaction.setEndDate(dto.getEndDate());
+        }
+        if (dto.getTotal() != null) {
+            transaction.setTotal(dto.getTotal());
+        }
+        if (dto.getDays() != null) {
+            transaction.setDays(dto.getDays());
+        }
+        
+        transaction.calculateDays();
+        return transactionRepository.save(transaction);
+    }
+
+    @Transactional
+    public void deleteTransaction(Long tid) {
+        Transaction transaction = findById(tid);
+        transactionRepository.delete(transaction);
+    }
+
     public TransactionDTO toDTO(Transaction t) {
         return TransactionDTO.builder()
                 .tid(t.getTid())

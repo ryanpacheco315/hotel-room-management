@@ -78,4 +78,10 @@ public class UserService {
         user.setPassword(newPassword);
         userRepository.save(user);
     }
+
+    @Transactional
+    public void deleteUser(Long uid) {
+        User user = findById(uid);
+        userRepository.delete(user);
+    }
 }

@@ -24,6 +24,11 @@ body {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
+#loginPage {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 38vh;
+}
+
 .login-container h1 {
     text-align: center;
     margin-bottom: 30px;
@@ -153,7 +158,16 @@ header h1 {
 .header-right {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 15px;
+}
+
+.header-right .btn-primary {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.header-right .btn-primary:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 #currentUser {
@@ -459,5 +473,115 @@ main {
     
     main {
         padding: 15px;
+    }
+}
+
+/* Floor Layout */
+.floor-section {
+    display: flex;
+    align-items: stretch;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.floor-section:first-of-type {
+    margin-bottom: 75px;  /* Gap about a button's height between floors */
+}
+
+.floor-label {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    min-width: 80px;
+    max-width: 80px;
+    white-space: nowrap;
+}
+
+.floor-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    flex: 1;
+}
+
+/* Room button - uniform size */
+.room-btn {
+    padding: 15px 10px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-align: center;
+    height: 55px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.room-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Empty cell - transparent, same size as buttons */
+.room-empty {
+    height: 55px;
+    width: 100%;
+    background: transparent;
+    border-radius: 8px;
+}
+
+/* Hide the price display */
+.room-btn .room-price {
+    display: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .floor-label {
+        width: 70px;
+        min-width: 70px;
+        max-width: 70px;
+        font-size: 12px;
+        padding: 10px;
+    }
+
+    .room-btn,
+    .room-empty {
+        height: 50px;
+        font-size: 16px;
+    }
+
+    .floor-section:first-of-type {
+        margin-bottom: 60px;
+    }
+}
+
+@media (max-width: 576px) {
+    .floor-section {
+        flex-direction: column;
+    }
+
+    .floor-label {
+        width: 100%;
+        max-width: 100%;
+        min-width: auto;
+    }
+
+    .room-btn,
+    .room-empty {
+        height: 45px;
+        font-size: 14px;
     }
 }

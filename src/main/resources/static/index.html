@@ -10,14 +10,14 @@
     <!-- Login Page -->
     <div id="loginPage" class="page">
         <div class="login-container">
-            <h1>🏨 Hotel Room Management</h1>
+            <h1>🏨🌴 Hostal Malibu</h1>
             <form id="loginForm">
                 <div class="form-group">
-                    <label for="username">Username</label>
+                    <label for="username">Usuario/Username</label>
                     <input type="text" id="username" required>
                 </div>
                 <div class="form-group">
-                    <label for="password">Password</label>
+                    <label for="password">Clave/Password</label>
                     <input type="password" id="password" required>
                 </div>
                 <button type="submit" class="btn btn-primary">Login</button>
@@ -36,10 +36,11 @@
     <div id="dashboardPage" class="page hidden">
         <header>
             <div class="header-left">
-                <h1>🏨 Hotel Room Management</h1>
+                <h1>🏨🌴 Hostal Malibu</h1>
             </div>
             <div class="header-right">
                 <span id="currentUser"></span>
+                <a id="adminPanelBtn" href="admin.html" class="btn btn-primary hidden">Admin Panel</a>
                 <button id="logoutBtn" class="btn btn-secondary">Logout</button>
             </div>
         </header>
@@ -68,19 +69,20 @@
                     <span class="stat-label">Reserved</span>
                 </div>
             </div>
-
             <!-- Room Grid -->
             <div class="room-section">
                 <h2>Room Status Board</h2>
-                <div class="legend">
-                    <span class="legend-item"><span class="legend-color available"></span> Available</span>
-                    <span class="legend-item"><span class="legend-color occupied"></span> Occupied</span>
-                    <span class="legend-item"><span class="legend-color dirty"></span> Dirty</span>
-                    <span class="legend-item"><span class="legend-color cleaning"></span> Cleaning</span>
-                    <span class="legend-item"><span class="legend-color reserved"></span> Reserved</span>
+
+                <!-- Floor 1 (Rooms 1-12) -->
+                <div class="floor-section">
+                    <div class="floor-label">1st Floor</div>
+                    <div id="floor1Grid" class="floor-grid"></div>
                 </div>
-                <div id="roomGrid" class="room-grid">
-                    <!-- Rooms will be populated here -->
+
+                <!-- Floor 2 (Rooms 13-25) -->
+                <div class="floor-section">
+                    <div class="floor-label">2nd Floor</div>
+                    <div id="floor2Grid" class="floor-grid"></div>
                 </div>
             </div>
         </main>
