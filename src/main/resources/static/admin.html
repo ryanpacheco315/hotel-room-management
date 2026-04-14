@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Hotel Room Management</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <!-- Login Required Check -->
+    <div id="accessDenied" class="page hidden">
+        <div class="login-container">
+            <h1>🚫 Access Denied</h1>
+            <p>You must be logged in as an Admin or Manager to access this page.</p>
+            <a href="index.html" class="btn btn-primary">Go to Login</a>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="adminPage" class="page hidden">
+        <header>
+            <div class="header-left">
+                <h1>🛠️ Admin Panel</h1>
+            </div>
+            <div class="header-right">
+                <span id="currentUser"></span>
+                <a href="index.html" class="btn btn-secondary">Back to Dashboard</a>
+                <button id="logoutBtn" class="btn btn-secondary">Logout</button>
+            </div>
+        </header>
+
+        <main>
+            <!-- Tab Navigation -->
+            <div class="tab-container">
+                <button class="tab-btn active" data-tab="guests">👥 Guests</button>
+                <button class="tab-btn" data-tab="rooms">🚪 Rooms</button>
+                <button class="tab-btn" data-tab="transactions">💳 Transactions</button>
+                <button class="tab-btn" data-tab="users">👤 Users</button>
+            </div>
+
+            <!-- Guests Tab -->
+            <div id="guestsTab" class="tab-content active">
+                <div class="table-header">
+                    <h2>Guest Management</h2>
+                </div>
+                <div class="table-container">
+                    <table id="guestsTable">
+                        <thead>
+                            <tr>
+                                <th data-sort="gid">ID ↕</th>
+                                <th data-sort="idNumber">ID Number ↕</th>
+                                <th data-sort="fullName">Full Name ↕</th>
+                                <th data-sort="state">State ↕</th>
+                                <th data-sort="country">Country ↕</th>
+                                <th data-sort="occupation">Occupation ↕</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Rooms Tab -->
+            <div id="roomsTab" class="tab-content hidden">
+                <div class="table-header">
+                    <h2>Room Management</h2>
+                </div>
+                <div class="table-container">
+                    <table id="roomsTable">
+                        <thead>
+                            <tr>
+                                <th data-sort="rid">ID ↕</th>
+                                <th data-sort="name">Room Name ↕</th>
+                                <th data-sort="description">Description ↕</th>
+                                <th data-sort="status">Status ↕</th>
+                                <th data-sort="money">Rate ↕</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Transactions Tab -->
+            <div id="transactionsTab" class="tab-content hidden">
+                <div class="table-header">
+                    <h2>Transaction Management</h2>
+                </div>
+                <div class="table-container">
+                    <table id="transactionsTable">
+                        <thead>
+                            <tr>
+                                <th data-sort="tid">ID ↕</th>
+                                <th data-sort="roomName">Room ↕</th>
+                                <th data-sort="guestName">Guest ↕</th>
+                                <th data-sort="userName">Employee ↕</th>
+                                <th data-sort="startDate">Check-In ↕</th>
+                                <th data-sort="endDate">Check-Out ↕</th>
+                                <th data-sort="days">Days ↕</th>
+                                <th data-sort="total">Total ↕</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Users Tab -->
+            <div id="usersTab" class="tab-content hidden">
+                <div class="table-header">
+                    <h2>User Management</h2>
+                    <button id="addUserBtn" class="btn btn-success admin-only">+ Add User</button>
+                </div>
+                <div class="table-container">
+                    <table id="usersTable">
+                        <thead>
+                            <tr>
+                                <th data-sort="uid">ID ↕</th>
+                                <th data-sort="username">Username ↕</th>
+                                <th data-sort="fullName">Full Name ↕</th>
+                                <th data-sort="type">Role ↕</th>
+                                <th data-sort="startDate">Start Date ↕</th>
+                                <th data-sort="active">Status ↕</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- View Guest Modal -->
+    <div id="viewGuestModal" class="modal hidden">
+        <div class="modal-content modal-large">
+            <span class="close-btn">&times;</span>
+            <h2>Guest Details</h2>
+            <div id="guestDetails" class="detail-section"></div>
+            <h3>Transaction History</h3>
+            <div id="guestTransactions" class="transaction-list"></div>
+        </div>
+    </div>
+
+    <!-- Edit Guest Modal -->
+    <div id="editGuestModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Edit Guest</h2>
+            <form id="editGuestForm">
+                <input type="hidden" id="editGuestId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>ID Number</label>
+                        <input type="text" id="editGuestIdNumber" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Full Name *</label>
+                        <input type="text" id="editGuestFullName" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>State</label>
+                        <input type="text" id="editGuestState">
+                    </div>
+                    <div class="form-group">
+                        <label>Country</label>
+                        <input type="text" id="editGuestCountry">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Date of Birth</label>
+                        <input type="date" id="editGuestDob">
+                    </div>
+                    <div class="form-group">
+                        <label>Marriage Status</label>
+                        <select id="editGuestMarriage">
+                            <option value="">Select...</option>
+                            <option value="Single">Single</option>
+                            <option value="Married">Married</option>
+                            <option value="Divorced">Divorced</option>
+                            <option value="Widowed">Widowed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Occupation</label>
+                    <input type="text" id="editGuestOccupation">
+                </div>
+                <div class="form-group">
+                    <label>Description/Notes</label>
+                    <textarea id="editGuestDescription" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">Save Changes</button>
+                    <button type="button" class="btn btn-secondary close-modal-btn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Room Modal -->
+    <div id="editRoomModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Edit Room</h2>
+            <form id="editRoomForm">
+                <input type="hidden" id="editRoomId">
+                <div class="form-group">
+                    <label>Room Name *</label>
+                    <input type="text" id="editRoomName" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="editRoomDescription">
+                </div>
+                <div class="form-group">
+                    <label>Rate per Night ($) *</label>
+                    <input type="number" id="editRoomMoney" step="0.01" min="0" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">Save Changes</button>
+                    <button type="button" class="btn btn-secondary close-modal-btn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Transaction Modal -->
+    <div id="editTransactionModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Edit Transaction</h2>
+            <form id="editTransactionForm">
+                <input type="hidden" id="editTransactionId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Room</label>
+                        <input type="text" id="editTransactionRoom" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Guest</label>
+                        <input type="text" id="editTransactionGuest" readonly>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Check-In Date</label>
+                        <input type="date" id="editTransactionStartDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Check-Out Date</label>
+                        <input type="date" id="editTransactionEndDate">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Days</label>
+                        <input type="number" id="editTransactionDays" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Total ($)</label>
+                        <input type="number" id="editTransactionTotal" step="0.01" min="0">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">Save Changes</button>
+                    <button type="button" class="btn btn-secondary close-modal-btn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div id="editUserModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2 id="userModalTitle">Edit User</h2>
+            <form id="editUserForm">
+                <input type="hidden" id="editUserId">
+                <div class="form-group">
+                    <label>Username *</label>
+                    <input type="text" id="editUserUsername" required>
+                </div>
+                <div class="form-group" id="passwordGroup">
+                    <label>Password *</label>
+                    <input type="password" id="editUserPassword">
+                    <small>Leave blank to keep current password (edit mode only)</small>
+                </div>
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" id="editUserFullName" required>
+                </div>
+                <div class="form-group">
+                    <label>Role *</label>
+                    <select id="editUserType" required>
+                        <option value="RECEPTIONIST">Receptionist</option>
+                        <option value="MANAGER">Manager</option>
+                        <option value="ADMIN">Admin</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">Save</button>
+                    <button type="button" class="btn btn-secondary close-modal-btn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div id="confirmDeleteModal" class="modal hidden">
+        <div class="modal-content modal-small">
+            <h2>Confirm Delete</h2>
+            <p id="deleteMessage">Are you sure you want to delete this item?</p>
+            <div class="form-actions">
+                <button id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
+                <button class="btn btn-secondary close-modal-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+</body>
+</html>
