@@ -32,6 +32,10 @@ public class TransactionService {
         return transactionRepository.findAllByOrderByTidDesc();
     }
 
+    public List<Transaction> findAllOrderByTidDesc() {
+        return transactionRepository.findAllByOrderByTidDesc();
+    }
+
     public Transaction findById(Long tid) {
         return transactionRepository.findById(tid)
                 .orElseThrow(() -> new ResourceNotFoundException("Transaction not found with ID: " + tid));

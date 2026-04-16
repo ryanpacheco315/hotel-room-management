@@ -10,6 +10,7 @@ let guests = [];
 let rooms = [];
 let transactions = [];
 let users = [];
+let partes = [];
 
 // ==================== INITIALIZATION ====================
 
@@ -130,7 +131,8 @@ async function loadAllData() {
         loadGuests(),
         loadRooms(),
         loadTransactions(),
-        loadUsers()
+        loadUsers(),
+        loadPartes()
     ]);
 }
 
@@ -171,6 +173,16 @@ async function loadUsers() {
         renderUsersTable();
     } catch (error) {
         console.error('Error loading users:', error);
+    }
+}
+
+async function loadPartes() {
+    try {
+        const response = await fetch(`${API_BASE}/admin/partes`);
+        partes = await response.json();
+        renderPartesTable();
+    } catch (error) {
+        console.error('Error loading partes:', error);
     }
 }
 
@@ -296,6 +308,30 @@ function renderUsersTable() {
     `).join('');
 }
 
+function renderPartesTable() {
+    const tbody = document.querySelector('#partesTable tbody');
+    const sortedPartes = sortData([...partes], 'partes');
+    
+    if (sortedPartes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="no-data">No partes found</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = sortedPartes.map(p => `
+        <tr>
+            <td>${p.roomName || '-'}</td>
+            <td>${p.fullName || '-'}</td>
+            <td>${p.country || '-'}</td>
+            <td>${p.age !== null ? p.age : '-'}</td>
+            <td>${p.marriageStatus || '-'}</td>
+            <td>${p.occupation || '-'}</td>
+            <td>${p.idNumber || '-'}</td>
+            <td>${p.state || '-'}</td>
+            <td>${p.checkInDate || '-'}</td>
+        </tr>
+    `).join('');
+}
+
 // ==================== SORTING ====================
 
 function handleSort(th) {
@@ -327,6 +363,7 @@ function handleSort(th) {
     else if (tableId === 'roomsTable') renderRoomsTable();
     else if (tableId === 'transactionsTable') renderTransactionsTable();
     else if (tableId === 'usersTable') renderUsersTable();
+    else if (tableId === 'partesTable') renderPartesTable();
 }
 
 function sortData(data, type) {

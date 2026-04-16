@@ -247,4 +247,44 @@ public class AdminController {
         response.put("message", "User deleted successfully");
         return ResponseEntity.ok(response);
     }
+
+    // ==================== PARTES ====================
+
+    @GetMapping("/partes")
+    public ResponseEntity<List<PartesDTO>> getPartes() {
+        List<Transaction> allTransactions = transactionService.findAllOrderByTidDesc();
+        
+        // Get latest 50 transactions
+        List<Transaction> latest50 = allTransactions.stream()
+                .limit(50)
+                .collect(Collectors.toList());
+        
+        // Map to PartesDTO
+        List<PartesDTO> partesList = latest50.stream()
+                .map(t -> {
+                    Guest guest = t.getGuest();
+                    Room room = t.getRoom();
+                    
+                    // Calculate age from date of birth
+                    Integer age = null;
+                    if (guest.getDob() != null) {
+                        age = java.time.Period.between(guest.getDob(), java.time.LocalDate.now()).getYears();
+                    }
+                    
+                    return PartesDTO.builder()
+                            .roomName(room.getName())
+                            .fullName(guest.getFullName())
+                            .country(guest.getCountry())
+                            .age(age)
+                            .marriageStatus(guest.getMarriageStatus())
+                            .occupation(guest.getOccupation())
+                            .idNumber(guest.getIdNumber())
+                            .state(guest.getState())
+                            .checkInDate(t.getStartDate())
+                            .build();
+                })
+                .collect(Collectors.toList());
+        
+        return ResponseEntity.ok(partesList);
+    }
 }

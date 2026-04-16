@@ -140,20 +140,32 @@ async function loadRooms() {
 function renderRooms(rooms) {
     const floor1Grid = document.getElementById('floor1Grid');
     const floor2Grid = document.getElementById('floor2Grid');
+    const floor3Grid = document.getElementById('floor3Grid');
+    const floor4Grid = document.getElementById('floor4Grid');
 
     floor1Grid.innerHTML = '';
     floor2Grid.innerHTML = '';
+    floor3Grid.innerHTML = '';
+    floor4Grid.innerHTML = '';
 
-    // Create a map of room display number to room data
-    const sortedRooms = [...rooms].sort((a, b) => {
-        const numA = parseInt(a.name.replace(/\D/g, ''));
-        const numB = parseInt(b.name.replace(/\D/g, ''));
-        return numA - numB;
+    // Create a map of room name to room data
+    const roomByName = {};
+    rooms.forEach(room => {
+        roomByName[room.name] = room;
     });
 
-    const roomMap = {};
-    sortedRooms.forEach((room, index) => {
-        roomMap[index + 1] = room;
+    // Create a map for floors 1 and 2 (numeric rooms)
+    const sortedNumericRooms = [...rooms]
+        .filter(r => /^Room \d+$/.test(r.name))
+        .sort((a, b) => {
+            const numA = parseInt(a.name.replace(/\D/g, ''));
+            const numB = parseInt(b.name.replace(/\D/g, ''));
+            return numA - numB;
+        });
+
+    const roomMapNumeric = {};
+    sortedNumericRooms.forEach((room, index) => {
+        roomMapNumeric[index + 1] = room;
     });
 
     // Floor 1 layout (rooms 1-12)
@@ -168,6 +180,20 @@ function renderRooms(rooms) {
         [24, 22, 20, null, 18, 16, 14]
     ];
 
+    // Floor 3 layout (rooms 301A-304B)
+    const floor3Layout = [
+        ['Room 303A', 'Room 303B', null, null, 'Room 302C', 'Room 302B'],
+        [null, null, null, null, null, 'Room 302A'],
+        ['Room 304A', 'Room 304B', null, null, 'Room 301B', 'Room 301A']
+    ];
+
+    // Floor 4 layout (rooms 401A-404B)
+    const floor4Layout = [
+        ['Room 403A', 'Room 403B', null, null, 'Room 402C', 'Room 402B'],
+        [null, null, null, null, null, 'Room 402A'],
+        ['Room 404A', 'Room 404B', null, null, 'Room 401B', 'Room 401A']
+    ];
+
     // Render Floor 1
     floor1Layout.forEach(row => {
         row.forEach(roomNum => {
@@ -176,7 +202,7 @@ function renderRooms(rooms) {
                 emptyDiv.className = 'room-empty';
                 floor1Grid.appendChild(emptyDiv);
             } else {
-                const room = roomMap[roomNum];
+                const room = roomMapNumeric[roomNum];
                 if (room) {
                     const btn = document.createElement('button');
                     btn.className = `room-btn ${room.status.toLowerCase()}`;
@@ -196,13 +222,67 @@ function renderRooms(rooms) {
                 emptyDiv.className = 'room-empty';
                 floor2Grid.appendChild(emptyDiv);
             } else {
-                const room = roomMap[roomNum];
+                const room = roomMapNumeric[roomNum];
                 if (room) {
                     const btn = document.createElement('button');
                     btn.className = `room-btn ${room.status.toLowerCase()}`;
                     btn.innerHTML = `${roomNum}`;
                     btn.addEventListener('click', () => handleRoomClick(room));
                     floor2Grid.appendChild(btn);
+                }
+            }
+        });
+    });
+
+    // Render Floor 3
+    floor3Layout.forEach(row => {
+        row.forEach(roomName => {
+            if (roomName === null) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'room-empty';
+                floor3Grid.appendChild(emptyDiv);
+            } else {
+                const room = roomByName[roomName];
+                if (room) {
+                    // Extract display name (e.g., "Room 303A" -> "303A")
+                    const displayName = room.name.replace('Room ', '');
+                    const btn = document.createElement('button');
+                    btn.className = `room-btn ${room.status.toLowerCase()}`;
+                    btn.innerHTML = `${displayName}`;
+                    btn.addEventListener('click', () => handleRoomClick(room));
+                    floor3Grid.appendChild(btn);
+                } else {
+                    // Room not found in database, create empty cell
+                    const emptyDiv = document.createElement('div');
+                    emptyDiv.className = 'room-empty';
+                    floor3Grid.appendChild(emptyDiv);
+                }
+            }
+        });
+    });
+
+    // Render Floor 4
+    floor4Layout.forEach(row => {
+        row.forEach(roomName => {
+            if (roomName === null) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'room-empty';
+                floor4Grid.appendChild(emptyDiv);
+            } else {
+                const room = roomByName[roomName];
+                if (room) {
+                    // Extract display name (e.g., "Room 403A" -> "403A")
+                    const displayName = room.name.replace('Room ', '');
+                    const btn = document.createElement('button');
+                    btn.className = `room-btn ${room.status.toLowerCase()}`;
+                    btn.innerHTML = `${displayName}`;
+                    btn.addEventListener('click', () => handleRoomClick(room));
+                    floor4Grid.appendChild(btn);
+                } else {
+                    // Room not found in database, create empty cell
+                    const emptyDiv = document.createElement('div');
+                    emptyDiv.className = 'room-empty';
+                    floor4Grid.appendChild(emptyDiv);
                 }
             }
         });

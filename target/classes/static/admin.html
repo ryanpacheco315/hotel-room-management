@@ -37,6 +37,7 @@
                 <button class="tab-btn" data-tab="rooms">🚪 Rooms</button>
                 <button class="tab-btn" data-tab="transactions">💳 Transactions</button>
                 <button class="tab-btn" data-tab="users">👤 Users</button>
+                <button class="tab-btn" data-tab="partes">📄 Partes</button>
             </div>
 
             <!-- Guests Tab -->
@@ -126,6 +127,31 @@
                                 <th data-sort="startDate">Start Date ↕</th>
                                 <th data-sort="active">Status ↕</th>
                                 <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Partes Tab -->
+            <div id="partesTab" class="tab-content hidden">
+                <div class="table-header">
+                    <h2>Partes (Latest 50 Transactions)</h2>
+                </div>
+                <div class="table-container">
+                    <table id="partesTable">
+                        <thead>
+                            <tr>
+                                <th data-sort="roomName">Room ↕</th>
+                                <th data-sort="fullName">Full Name ↕</th>
+                                <th data-sort="country">Country ↕</th>
+                                <th data-sort="age">Age ↕</th>
+                                <th data-sort="marriageStatus">Marriage Status ↕</th>
+                                <th data-sort="occupation">Occupation ↕</th>
+                                <th data-sort="idNumber">ID Number ↕</th>
+                                <th data-sort="state">State ↕</th>
+                                <th data-sort="checkInDate">Check In Date ↕</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
