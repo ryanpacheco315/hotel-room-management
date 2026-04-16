@@ -20,11 +20,11 @@ public class RoomService {
     private final RoomRepository roomRepository;
 
     public List<Room> findAll() {
-        return roomRepository.findAllByOrderByNameAsc();
+        return roomRepository.findAllByOrderByRidAsc();
     }
 
     public List<RoomDTO> findAllAsDTO() {
-        return roomRepository.findAllByOrderByNameAsc().stream()
+        return roomRepository.findAllByOrderByRidAsc().stream()
                 .map(RoomDTO::fromEntity)
                 .collect(Collectors.toList());
     }

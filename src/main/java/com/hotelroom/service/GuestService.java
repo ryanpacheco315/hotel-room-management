@@ -17,7 +17,7 @@ public class GuestService {
     private final GuestRepository guestRepository;
 
     public List<Guest> findAll() {
-        return guestRepository.findAll();
+        return guestRepository.findAllByOrderByGidDesc();
     }
 
     public Guest findById(Long gid) {

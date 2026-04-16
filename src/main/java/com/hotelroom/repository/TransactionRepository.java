@@ -29,4 +29,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findByDateRange(@Param("start") LocalDate start, @Param("end") LocalDate end);
     
     List<Transaction> findByEndDateIsNull();
+
+    List<Transaction> findAllByOrderByTidDesc();
 }

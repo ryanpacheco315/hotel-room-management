@@ -29,7 +29,7 @@ public class TransactionService {
     private final UserService userService;
 
     public List<Transaction> findAll() {
-        return transactionRepository.findAll();
+        return transactionRepository.findAllByOrderByTidDesc();
     }
 
     public Transaction findById(Long tid) {

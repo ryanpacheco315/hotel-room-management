@@ -112,6 +112,15 @@ function showDashboard() {
     loginPage.classList.add('hidden');
     dashboardPage.classList.remove('hidden');
     currentUserSpan.textContent = `Welcome, ${currentUser.fullName} (${currentUser.type})`;
+    
+    // Show admin panel button for ADMIN and MANAGER
+    const adminPanelBtn = document.getElementById('adminPanelBtn');
+    if (currentUser.type === 'ADMIN' || currentUser.type === 'MANAGER') {
+        adminPanelBtn.classList.remove('hidden');
+    } else {
+        adminPanelBtn.classList.add('hidden');
+    }
+    
     loadRooms();
     loadStats();
 }
@@ -129,16 +138,74 @@ async function loadRooms() {
 
 // Render Rooms
 function renderRooms(rooms) {
-    roomGrid.innerHTML = '';
-    rooms.forEach(room => {
-        const btn = document.createElement('button');
-        btn.className = `room-btn ${room.status.toLowerCase()}`;
-        btn.innerHTML = `
-            <span class="room-name">${room.name}</span>
-            <span class="room-price">$${room.money}/night</span>
-        `;
-        btn.addEventListener('click', () => handleRoomClick(room));
-        roomGrid.appendChild(btn);
+    const floor1Grid = document.getElementById('floor1Grid');
+    const floor2Grid = document.getElementById('floor2Grid');
+
+    floor1Grid.innerHTML = '';
+    floor2Grid.innerHTML = '';
+
+    // Create a map of room display number to room data
+    const sortedRooms = [...rooms].sort((a, b) => {
+        const numA = parseInt(a.name.replace(/\D/g, ''));
+        const numB = parseInt(b.name.replace(/\D/g, ''));
+        return numA - numB;
+    });
+
+    const roomMap = {};
+    sortedRooms.forEach((room, index) => {
+        roomMap[index + 1] = room;
+    });
+
+    // Floor 1 layout (rooms 1-12)
+    const floor1Layout = [
+        [12, 10, 8, 7, 5, 3, 1],
+        [11, 9, null, null, 6, 4, 2]
+    ];
+
+    // Floor 2 layout (rooms 13-25)
+    const floor2Layout = [
+        [25, 23, 21, 19, 17, 15, 13],
+        [24, 22, 20, null, 18, 16, 14]
+    ];
+
+    // Render Floor 1
+    floor1Layout.forEach(row => {
+        row.forEach(roomNum => {
+            if (roomNum === null) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'room-empty';
+                floor1Grid.appendChild(emptyDiv);
+            } else {
+                const room = roomMap[roomNum];
+                if (room) {
+                    const btn = document.createElement('button');
+                    btn.className = `room-btn ${room.status.toLowerCase()}`;
+                    btn.innerHTML = `${roomNum}`;
+                    btn.addEventListener('click', () => handleRoomClick(room));
+                    floor1Grid.appendChild(btn);
+                }
+            }
+        });
+    });
+
+    // Render Floor 2
+    floor2Layout.forEach(row => {
+        row.forEach(roomNum => {
+            if (roomNum === null) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'room-empty';
+                floor2Grid.appendChild(emptyDiv);
+            } else {
+                const room = roomMap[roomNum];
+                if (room) {
+                    const btn = document.createElement('button');
+                    btn.className = `room-btn ${room.status.toLowerCase()}`;
+                    btn.innerHTML = `${roomNum}`;
+                    btn.addEventListener('click', () => handleRoomClick(room));
+                    floor2Grid.appendChild(btn);
+                }
+            }
+        });
     });
 }
 
