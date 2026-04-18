@@ -156,7 +156,7 @@ function renderRooms(rooms) {
 
     // Create a map for floors 1 and 2 (numeric rooms)
     const sortedNumericRooms = [...rooms]
-        .filter(r => /^Room \d+$/.test(r.name))
+        .filter(r => /^\d+$/.test(r.name) || /^\d+$/.test(r.name))
         .sort((a, b) => {
             const numA = parseInt(a.name.replace(/\D/g, ''));
             const numB = parseInt(b.name.replace(/\D/g, ''));
@@ -182,18 +182,17 @@ function renderRooms(rooms) {
 
     // Floor 3 layout (rooms 301A-304B)
     const floor3Layout = [
-        ['Room 303A', 'Room 303B', null, null, 'Room 302C', 'Room 302B'],
-        [null, null, null, null, null, 'Room 302A'],
-        ['Room 304A', 'Room 304B', null, null, 'Room 301B', 'Room 301A']
-    ];
+            ['303A', '303B', null, null, '302C', '302B'],
+            [null, null, null, null, null, '302A'],
+            ['304A', '304B', null, null, '301B', '301A']
+        ];
 
     // Floor 4 layout (rooms 401A-404B)
     const floor4Layout = [
-        ['Room 403A', 'Room 403B', null, null, 'Room 402C', 'Room 402B'],
-        [null, null, null, null, null, 'Room 402A'],
-        ['Room 404A', 'Room 404B', null, null, 'Room 401B', 'Room 401A']
+        ['403A', '403B', null, null, '402C', '402B'],
+        [null, null, null, null, null, '402A'],
+        ['404A', '404B', null, null, '401B', '401A']
     ];
-
     // Render Floor 1
     floor1Layout.forEach(row => {
         row.forEach(roomNum => {
@@ -245,7 +244,7 @@ function renderRooms(rooms) {
                 const room = roomByName[roomName];
                 if (room) {
                     // Extract display name (e.g., "Room 303A" -> "303A")
-                    const displayName = room.name.replace('Room ', '');
+                    const displayName = room.name;
                     const btn = document.createElement('button');
                     btn.className = `room-btn ${room.status.toLowerCase()}`;
                     btn.innerHTML = `${displayName}`;
@@ -272,7 +271,7 @@ function renderRooms(rooms) {
                 const room = roomByName[roomName];
                 if (room) {
                     // Extract display name (e.g., "Room 403A" -> "403A")
-                    const displayName = room.name.replace('Room ', '');
+                    const displayName = room.name;
                     const btn = document.createElement('button');
                     btn.className = `room-btn ${room.status.toLowerCase()}`;
                     btn.innerHTML = `${displayName}`;
@@ -428,6 +427,7 @@ function showExistingGuest(guest) {
         <p><strong>From:</strong> ${guest.state || 'N/A'}, ${guest.country || 'N/A'}</p>
         <p><strong>DOB:</strong> ${guest.dob || 'N/A'}</p>
         <p><strong>Occupation:</strong> ${guest.occupation || 'N/A'}</p>
+        <p><strong>Marriage Status:</strong> ${guest.marriageStatus || 'N/A'}</p>
         ${notesHtml}
     `;
     
