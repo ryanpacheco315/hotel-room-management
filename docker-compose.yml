@@ -1,6 +1,4 @@
 services:
-
-
   app:
     build: .
     container_name: hotel-app

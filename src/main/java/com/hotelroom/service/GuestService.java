@@ -33,6 +33,16 @@ public class GuestService {
         return guestRepository.existsByIdNumber(idNumber);
     }
 
+    /**
+     * Search guests by ID number or name
+     */
+    public List<Guest> search(String searchTerm) {
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+            return findAll();
+        }
+        return guestRepository.searchByIdNumberOrName(searchTerm.trim());
+    }
+
     @Transactional
     public Guest createGuest(GuestDTO dto) {
         Guest guest = Guest.builder()

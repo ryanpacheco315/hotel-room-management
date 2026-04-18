@@ -11,6 +11,7 @@ let rooms = [];
 let transactions = [];
 let users = [];
 let partes = [];
+let dailyReport = null;
 
 // ==================== INITIALIZATION ====================
 
@@ -52,6 +53,10 @@ function showAdminPanel() {
     document.getElementById('accessDenied').classList.add('hidden');
     document.getElementById('adminPage').classList.remove('hidden');
     document.getElementById('currentUser').textContent = `${currentUser.fullName} (${currentUser.type})`;
+    
+    // Set today's date for daily report
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('dailyDateInput').value = today;
 }
 
 function setupEventListeners() {
@@ -96,6 +101,16 @@ function setupEventListeners() {
     document.querySelectorAll('th[data-sort]').forEach(th => {
         th.addEventListener('click', () => handleSort(th));
     });
+    
+    // Guest search
+    document.getElementById('guestSearchBtn').addEventListener('click', searchGuests);
+    document.getElementById('guestSearchInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') searchGuests();
+    });
+    document.getElementById('guestClearBtn').addEventListener('click', clearGuestSearch);
+    
+    // Daily report
+    document.getElementById('loadDailyBtn').addEventListener('click', loadDailyReport);
 }
 
 function logout() {
@@ -122,6 +137,11 @@ function switchTab(tabName) {
     document.querySelectorAll('th').forEach(th => {
         th.classList.remove('sort-asc', 'sort-desc');
     });
+    
+    // Load daily report when switching to daily tab
+    if (tabName === 'daily' && !dailyReport) {
+        loadDailyReport();
+    }
 }
 
 // ==================== DATA LOADING ====================
@@ -144,6 +164,27 @@ async function loadGuests() {
     } catch (error) {
         console.error('Error loading guests:', error);
     }
+}
+
+async function searchGuests() {
+    const searchTerm = document.getElementById('guestSearchInput').value.trim();
+    if (!searchTerm) {
+        loadGuests();
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/admin/guests/search?q=${encodeURIComponent(searchTerm)}`);
+        guests = await response.json();
+        renderGuestsTable();
+    } catch (error) {
+        console.error('Error searching guests:', error);
+    }
+}
+
+function clearGuestSearch() {
+    document.getElementById('guestSearchInput').value = '';
+    loadGuests();
 }
 
 async function loadRooms() {
@@ -183,6 +224,22 @@ async function loadPartes() {
         renderPartesTable();
     } catch (error) {
         console.error('Error loading partes:', error);
+    }
+}
+
+async function loadDailyReport() {
+    const dateInput = document.getElementById('dailyDateInput').value;
+    if (!dateInput) {
+        alert('Please select a date');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/admin/daily?date=${dateInput}`);
+        dailyReport = await response.json();
+        renderDailyReport();
+    } catch (error) {
+        console.error('Error loading daily report:', error);
     }
 }
 
@@ -252,20 +309,19 @@ function renderTransactionsTable() {
     const sortedTransactions = sortData([...transactions], 'transactions');
     
     if (sortedTransactions.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="no-data">No transactions found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="no-data">No transactions found</td></tr>';
         return;
     }
     
     tbody.innerHTML = sortedTransactions.map(t => `
         <tr>
             <td>${t.tid}</td>
+            <td>${t.date || '-'}</td>
             <td>${t.roomName}</td>
             <td>${t.guestName}</td>
             <td>${t.userName}</td>
-            <td>${t.startDate}</td>
-            <td>${t.endDate || '<span class="status-badge active">Active</span>'}</td>
-            <td>${t.days || '-'}</td>
-            <td>${t.total ? '$' + parseFloat(t.total).toFixed(2) : '-'}</td>
+            <td>$${t.total != null ? parseFloat(t.total).toFixed(2) : '0.00'}</td>
+            <td>${t.parentTid || '-'}</td>
             <td>
                 <div class="action-buttons">
                     ${currentUser.type === 'ADMIN' ? `
@@ -299,7 +355,7 @@ function renderUsersTable() {
                 <div class="action-buttons">
                     ${currentUser.type === 'ADMIN' ? `
                         <button class="btn btn-sm btn-edit" onclick="editUser(${user.uid})">Edit</button>
-                        <button class="btn btn-sm btn-toggle" onclick="toggleUserActive(${user.uid})">${user.active ? 'Deactivate' : 'Activate'}</button>
+                        <button class="btn btn-sm btn-warning" onclick="toggleUserActive(${user.uid})">${user.active ? 'Deactivate' : 'Activate'}</button>
                         <button class="btn btn-sm btn-danger" onclick="confirmDeleteUser(${user.uid})">Delete</button>
                     ` : ''}
                 </div>
@@ -313,23 +369,60 @@ function renderPartesTable() {
     const sortedPartes = sortData([...partes], 'partes');
     
     if (sortedPartes.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="no-data">No partes found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="no-data">No records found</td></tr>';
         return;
     }
     
     tbody.innerHTML = sortedPartes.map(p => `
         <tr>
-            <td>${p.roomName || '-'}</td>
-            <td>${p.fullName || '-'}</td>
+            <td>${p.roomName}</td>
+            <td>${p.fullName}</td>
             <td>${p.country || '-'}</td>
-            <td>${p.age !== null ? p.age : '-'}</td>
+            <td>${p.age || '-'}</td>
             <td>${p.marriageStatus || '-'}</td>
             <td>${p.occupation || '-'}</td>
-            <td>${p.idNumber || '-'}</td>
+            <td>${p.idNumber}</td>
             <td>${p.state || '-'}</td>
-            <td>${p.checkInDate || '-'}</td>
+            <td>${p.date || '-'}</td>
         </tr>
     `).join('');
+}
+
+function renderDailyReport() {
+    if (!dailyReport) return;
+    
+    document.getElementById('dailyReportDate').textContent = dailyReport.date || '-';
+    document.getElementById('dailyTotalIncome').textContent = `$${parseFloat(dailyReport.totalIncome || 0).toFixed(2)}`;
+    document.getElementById('dailyTransactionCount').textContent = dailyReport.transactionCount || 0;
+    
+    const tbody = document.querySelector('#dailyTable tbody');
+    const transactions = dailyReport.transactions || [];
+    
+    if (transactions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="no-data">No transactions for this date</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = transactions.map(t => {
+        let type = 'Main Guest';
+        if (t.isSubGuest) {
+            type = 'Sub-Guest';
+        } else if (t.parentTid) {
+            type = 'Continue Stay';
+        }
+        
+        return `
+            <tr>
+                <td>${t.tid}</td>
+                <td>${t.roomName}</td>
+                <td>${t.guestName}</td>
+                <td>${t.guestIdNumber}</td>
+                <td>${t.userName}</td>
+                <td>$${t.total != null ? parseFloat(t.total).toFixed(2) : '0.00'}</td>
+                <td><span class="type-badge ${type.toLowerCase().replace(' ', '-')}">${type}</span></td>
+            </tr>
+        `;
+    }).join('');
 }
 
 // ==================== SORTING ====================
@@ -338,14 +431,7 @@ function handleSort(th) {
     const column = th.dataset.sort;
     const table = th.closest('table');
     
-    // Clear other sort indicators in same table
-    table.querySelectorAll('th').forEach(header => {
-        if (header !== th) {
-            header.classList.remove('sort-asc', 'sort-desc');
-        }
-    });
-    
-    // Toggle sort direction
+    // Toggle direction
     if (currentSort.column === column) {
         currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
     } else {
@@ -353,11 +439,13 @@ function handleSort(th) {
         currentSort.direction = 'asc';
     }
     
-    // Update visual indicator
-    th.classList.remove('sort-asc', 'sort-desc');
+    // Update visual indicators
+    table.querySelectorAll('th').forEach(t => {
+        t.classList.remove('sort-asc', 'sort-desc');
+    });
     th.classList.add(`sort-${currentSort.direction}`);
     
-    // Re-render appropriate table
+    // Re-render the appropriate table
     const tableId = table.id;
     if (tableId === 'guestsTable') renderGuestsTable();
     else if (tableId === 'roomsTable') renderRoomsTable();
@@ -402,64 +490,69 @@ async function viewGuest(gid) {
         const data = await response.json();
         
         const guest = data.guest;
-        const guestTransactions = data.transactions;
+        const guestTransactions = data.transactions || [];
         
-        // Render guest details
+        // Populate guest details
         document.getElementById('guestDetails').innerHTML = `
             <div class="detail-grid">
                 <div class="detail-item">
-                    <span class="detail-label">ID Number</span>
+                    <span class="detail-label">ID Number:</span>
                     <span class="detail-value">${guest.idNumber}</span>
                 </div>
                 <div class="detail-item">
-                    <span class="detail-label">Full Name</span>
+                    <span class="detail-label">Full Name:</span>
                     <span class="detail-value">${guest.fullName}</span>
                 </div>
                 <div class="detail-item">
-                    <span class="detail-label">Date of Birth</span>
-                    <span class="detail-value">${guest.dob || '-'}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Marriage Status</span>
-                    <span class="detail-value">${guest.marriageStatus || '-'}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">State</span>
+                    <span class="detail-label">State:</span>
                     <span class="detail-value">${guest.state || '-'}</span>
                 </div>
                 <div class="detail-item">
-                    <span class="detail-label">Country</span>
+                    <span class="detail-label">Country:</span>
                     <span class="detail-value">${guest.country || '-'}</span>
                 </div>
                 <div class="detail-item">
-                    <span class="detail-label">Occupation</span>
-                    <span class="detail-value">${guest.occupation || '-'}</span>
+                    <span class="detail-label">Date of Birth:</span>
+                    <span class="detail-value">${guest.dob || '-'}</span>
                 </div>
                 <div class="detail-item">
-                    <span class="detail-label">Total Stays</span>
-                    <span class="detail-value">${guestTransactions.length}</span>
+                    <span class="detail-label">Marriage Status:</span>
+                    <span class="detail-value">${guest.marriageStatus || '-'}</span>
                 </div>
-                ${guest.description ? `
-                    <div class="detail-notes">
-                        <strong>Notes:</strong> ${guest.description}
-                    </div>
-                ` : ''}
+                <div class="detail-item">
+                    <span class="detail-label">Occupation:</span>
+                    <span class="detail-value">${guest.occupation || '-'}</span>
+                </div>
             </div>
+            ${guest.description ? `<div class="detail-notes"><strong>Notes:</strong> ${guest.description}</div>` : ''}
         `;
         
-        // Render transactions
+        // Populate transactions
         if (guestTransactions.length === 0) {
             document.getElementById('guestTransactions').innerHTML = '<p class="no-data">No transaction history</p>';
         } else {
-            document.getElementById('guestTransactions').innerHTML = guestTransactions.map(t => `
-                <div class="transaction-item ${t.endDate ? 'completed' : 'active'}">
-                    <div class="transaction-info">
-                        <strong>Room ${t.roomName}</strong>
-                        <small>${t.startDate} → ${t.endDate || 'Present'} ${t.days ? `(${t.days} days)` : ''}</small>
-                    </div>
-                    <div class="transaction-amount">${t.total ? '$' + parseFloat(t.total).toFixed(2) : '-'}</div>
-                </div>
-            `).join('');
+            document.getElementById('guestTransactions').innerHTML = `
+                <table class="mini-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Room</th>
+                            <th>Date</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${guestTransactions.map(t => `
+                            <tr>
+                                <td>${t.tid}</td>
+                                <td>${t.roomName}</td>
+                                <td>${t.date || '-'}</td>
+                                <td>$${t.total != null ? parseFloat(t.total).toFixed(2) : '0.00'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
         }
         
         openModal('viewGuestModal');
@@ -553,50 +646,57 @@ async function viewRoom(rid) {
         const data = await response.json();
         
         const room = data.room;
-        const roomTransactions = data.transactions;
+        const roomTransactions = data.transactions || [];
         
-        // Reuse guest modal for room viewing
+        document.querySelector('#viewGuestModal h2').textContent = 'Room Details';
+        document.querySelector('#viewGuestModal h3').textContent = 'Transaction History';
+        
         document.getElementById('guestDetails').innerHTML = `
             <div class="detail-grid">
                 <div class="detail-item">
-                    <span class="detail-label">Room Name</span>
+                    <span class="detail-label">Room Name:</span>
                     <span class="detail-value">${room.name}</span>
                 </div>
                 <div class="detail-item">
-                    <span class="detail-label">Status</span>
+                    <span class="detail-label">Description:</span>
+                    <span class="detail-value">${room.description || '-'}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Status:</span>
                     <span class="detail-value"><span class="status-badge ${room.status.toLowerCase()}">${room.status}</span></span>
                 </div>
                 <div class="detail-item">
-                    <span class="detail-label">Rate per Night</span>
-                    <span class="detail-value">$${parseFloat(room.money).toFixed(2)}</span>
+                    <span class="detail-label">Rate:</span>
+                    <span class="detail-value">$${parseFloat(room.money).toFixed(2)}/night</span>
                 </div>
-                <div class="detail-item">
-                    <span class="detail-label">Total Bookings</span>
-                    <span class="detail-value">${roomTransactions.length}</span>
-                </div>
-                ${room.description ? `
-                    <div class="detail-notes">
-                        <strong>Description:</strong> ${room.description}
-                    </div>
-                ` : ''}
             </div>
         `;
         
-        document.querySelector('#viewGuestModal h2').textContent = 'Room Details';
-        document.querySelector('#viewGuestModal h3').textContent = 'Booking History';
-        
         if (roomTransactions.length === 0) {
-            document.getElementById('guestTransactions').innerHTML = '<p class="no-data">No booking history</p>';
+            document.getElementById('guestTransactions').innerHTML = '<p class="no-data">No transaction history</p>';
         } else {
-            document.getElementById('guestTransactions').innerHTML = roomTransactions.map(t => `
-                <div class="transaction-item ${t.endDate ? 'completed' : 'active'}">
-                    <div class="transaction-info">
-                        <strong>${t.guestName}</strong>
-                        <small>${t.startDate} → ${t.endDate || 'Present'} ${t.days ? `(${t.days} days)` : ''}</small>
-                    </div>
-                    <div class="transaction-amount">${t.total ? '$' + parseFloat(t.total).toFixed(2) : '-'}</div>
-                </div>
-            `).join('');
+            document.getElementById('guestTransactions').innerHTML = `
+                <table class="mini-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Guest</th>
+                            <th>Date</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${roomTransactions.map(t => `
+                            <tr>
+                                <td>${t.tid}</td>
+                                <td>${t.guestName}</td>
+                                <td>${t.date || '-'}</td>
+                                <td>$${t.total != null ? parseFloat(t.total).toFixed(2) : '0.00'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
         }
         
         openModal('viewGuestModal');
@@ -682,9 +782,7 @@ function editTransaction(tid) {
     document.getElementById('editTransactionId').value = transaction.tid;
     document.getElementById('editTransactionRoom').value = transaction.roomName;
     document.getElementById('editTransactionGuest').value = transaction.guestName;
-    document.getElementById('editTransactionStartDate').value = transaction.startDate;
-    document.getElementById('editTransactionEndDate').value = transaction.endDate || '';
-    document.getElementById('editTransactionDays').value = transaction.days || '';
+    document.getElementById('editTransactionDate').value = transaction.date || '';
     document.getElementById('editTransactionTotal').value = transaction.total || '';
     
     openModal('editTransactionModal');
@@ -695,9 +793,7 @@ async function saveTransaction(e) {
     
     const tid = document.getElementById('editTransactionId').value;
     const data = {
-        startDate: document.getElementById('editTransactionStartDate').value,
-        endDate: document.getElementById('editTransactionEndDate').value || null,
-        days: parseInt(document.getElementById('editTransactionDays').value) || null,
+        date: document.getElementById('editTransactionDate').value || null,
         total: parseFloat(document.getElementById('editTransactionTotal').value) || null
     };
     
@@ -812,7 +908,6 @@ async function saveUser(e) {
                 body: JSON.stringify(data)
             });
             
-            // Update password separately if provided
             if (password) {
                 await fetch(`${API_BASE}/admin/users/${uid}/password`, {
                     method: 'PUT',
@@ -855,7 +950,6 @@ async function toggleUserActive(uid) {
 function confirmDeleteUser(uid) {
     const user = users.find(u => u.uid === uid);
     
-    // Prevent deleting yourself
     if (user.uid === currentUser.uid) {
         alert('You cannot delete your own account');
         return;

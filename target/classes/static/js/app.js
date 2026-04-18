@@ -4,7 +4,7 @@ const API_URL = '/api';
 // Current user session
 let currentUser = null;
 let selectedRoom = null;
-let currentTransaction = null;
+let currentMainTransaction = null;
 
 // DOM Elements
 const loginPage = document.getElementById('loginPage');
@@ -13,11 +13,15 @@ const loginForm = document.getElementById('loginForm');
 const loginError = document.getElementById('loginError');
 const logoutBtn = document.getElementById('logoutBtn');
 const currentUserSpan = document.getElementById('currentUser');
-const roomGrid = document.getElementById('roomGrid');
 
 // Modals
+const availableModal = document.getElementById('availableModal');
 const checkInModal = document.getElementById('checkInModal');
-const statusModal = document.getElementById('statusModal');
+const occupiedModal = document.getElementById('occupiedModal');
+const subGuestModal = document.getElementById('subGuestModal');
+const continueStayModal = document.getElementById('continueStayModal');
+const dirtyModal = document.getElementById('dirtyModal');
+const reservedModal = document.getElementById('reservedModal');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -44,7 +48,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Guest search
+    // Available room actions
+    document.getElementById('checkInBtn').addEventListener('click', openCheckInModal);
+    document.getElementById('reserveBtn').addEventListener('click', handleReserve);
+
+    // Check-in guest search
     document.getElementById('searchGuestBtn').addEventListener('click', searchGuest);
     document.getElementById('guestIdSearch').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') searchGuest();
@@ -56,13 +64,31 @@ document.addEventListener('DOMContentLoaded', () => {
     // Existing guest confirmation
     document.getElementById('confirmExistingGuestBtn').addEventListener('click', handleExistingGuestCheckIn);
 
-    // Status change buttons
-    document.querySelectorAll('.status-btn').forEach(btn => {
-        btn.addEventListener('click', () => changeRoomStatus(btn.dataset.status));
+    // Occupied room actions
+    document.getElementById('addSubGuestBtn').addEventListener('click', openSubGuestModal);
+    document.getElementById('continueStayBtn').addEventListener('click', openContinueStayModal);
+    document.getElementById('checkOutBtn').addEventListener('click', handleCheckOut);
+
+    // Sub-guest search
+    document.getElementById('searchSubGuestBtn').addEventListener('click', searchSubGuest);
+    document.getElementById('subGuestIdSearch').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') searchSubGuest();
     });
 
-    // Checkout button
-    document.getElementById('checkOutBtn').addEventListener('click', handleCheckOut);
+    // New sub-guest form
+    document.getElementById('newSubGuestForm').addEventListener('submit', handleNewSubGuest);
+
+    // Existing sub-guest confirmation
+    document.getElementById('confirmSubGuestBtn').addEventListener('click', handleExistingSubGuest);
+
+    // Continue stay confirmation
+    document.getElementById('confirmContinueStayBtn').addEventListener('click', handleContinueStay);
+
+    // Dirty room - mark clean
+    document.getElementById('markCleanBtn').addEventListener('click', handleMarkClean);
+
+    // Reserved room - unreserve
+    document.getElementById('unreserveBtn').addEventListener('click', handleUnreserve);
 });
 
 // Login Handler
@@ -155,13 +181,13 @@ function renderRooms(rooms) {
     });
 
     // Create a map for floors 1 and 2 (numeric rooms)
-    const sortedNumericRooms = [...rooms]
-        .filter(r => /^\d+$/.test(r.name) || /^\d+$/.test(r.name))
-        .sort((a, b) => {
-            const numA = parseInt(a.name.replace(/\D/g, ''));
-            const numB = parseInt(b.name.replace(/\D/g, ''));
-            return numA - numB;
-        });
+        const sortedNumericRooms = [...rooms]
+            .filter(r => /^\d+$/.test(r.name) || /^\d+$/.test(r.name))
+            .sort((a, b) => {
+                const numA = parseInt(a.name.replace(/\D/g, ''));
+                const numB = parseInt(b.name.replace(/\D/g, ''));
+                return numA - numB;
+            });
 
     const roomMapNumeric = {};
     sortedNumericRooms.forEach((room, index) => {
@@ -180,7 +206,7 @@ function renderRooms(rooms) {
         [24, 22, 20, null, 18, 16, 14]
     ];
 
-    // Floor 3 layout (rooms 301A-304B)
+// Floor 3 layout (rooms 301A-304B)
     const floor3Layout = [
             ['303A', '303B', null, null, '302C', '302B'],
             [null, null, null, null, null, '302A'],
@@ -193,6 +219,7 @@ function renderRooms(rooms) {
         [null, null, null, null, null, '402A'],
         ['404A', '404B', null, null, '401B', '401A']
     ];
+
     // Render Floor 1
     floor1Layout.forEach(row => {
         row.forEach(roomNum => {
@@ -203,10 +230,7 @@ function renderRooms(rooms) {
             } else {
                 const room = roomMapNumeric[roomNum];
                 if (room) {
-                    const btn = document.createElement('button');
-                    btn.className = `room-btn ${room.status.toLowerCase()}`;
-                    btn.innerHTML = `${roomNum}`;
-                    btn.addEventListener('click', () => handleRoomClick(room));
+                    const btn = createRoomButton(room, roomNum);
                     floor1Grid.appendChild(btn);
                 }
             }
@@ -223,10 +247,7 @@ function renderRooms(rooms) {
             } else {
                 const room = roomMapNumeric[roomNum];
                 if (room) {
-                    const btn = document.createElement('button');
-                    btn.className = `room-btn ${room.status.toLowerCase()}`;
-                    btn.innerHTML = `${roomNum}`;
-                    btn.addEventListener('click', () => handleRoomClick(room));
+                    const btn = createRoomButton(room, roomNum);
                     floor2Grid.appendChild(btn);
                 }
             }
@@ -243,15 +264,10 @@ function renderRooms(rooms) {
             } else {
                 const room = roomByName[roomName];
                 if (room) {
-                    // Extract display name (e.g., "Room 303A" -> "303A")
                     const displayName = room.name;
-                    const btn = document.createElement('button');
-                    btn.className = `room-btn ${room.status.toLowerCase()}`;
-                    btn.innerHTML = `${displayName}`;
-                    btn.addEventListener('click', () => handleRoomClick(room));
+                    const btn = createRoomButton(room, displayName);
                     floor3Grid.appendChild(btn);
                 } else {
-                    // Room not found in database, create empty cell
                     const emptyDiv = document.createElement('div');
                     emptyDiv.className = 'room-empty';
                     floor3Grid.appendChild(emptyDiv);
@@ -270,15 +286,10 @@ function renderRooms(rooms) {
             } else {
                 const room = roomByName[roomName];
                 if (room) {
-                    // Extract display name (e.g., "Room 403A" -> "403A")
                     const displayName = room.name;
-                    const btn = document.createElement('button');
-                    btn.className = `room-btn ${room.status.toLowerCase()}`;
-                    btn.innerHTML = `${displayName}`;
-                    btn.addEventListener('click', () => handleRoomClick(room));
+                    const btn = createRoomButton(room, displayName);
                     floor4Grid.appendChild(btn);
                 } else {
-                    // Room not found in database, create empty cell
                     const emptyDiv = document.createElement('div');
                     emptyDiv.className = 'room-empty';
                     floor4Grid.appendChild(emptyDiv);
@@ -286,6 +297,14 @@ function renderRooms(rooms) {
             }
         });
     });
+}
+
+function createRoomButton(room, displayLabel) {
+    const btn = document.createElement('button');
+    btn.className = `room-btn ${room.status.toLowerCase()}`;
+    btn.innerHTML = `${displayLabel}`;
+    btn.addEventListener('click', () => handleRoomClick(room));
+    return btn;
 }
 
 // Load Stats
@@ -296,96 +315,88 @@ async function loadStats() {
         document.getElementById('statAvailable').textContent = stats.available || 0;
         document.getElementById('statOccupied').textContent = stats.occupied || 0;
         document.getElementById('statDirty').textContent = stats.dirty || 0;
-        document.getElementById('statCleaning').textContent = stats.cleaning || 0;
         document.getElementById('statReserved').textContent = stats.reserved || 0;
     } catch (err) {
         console.error('Failed to load stats:', err);
     }
 }
 
-// Handle Room Click
+// Handle Room Click - Open appropriate modal based on status
 function handleRoomClick(room) {
     selectedRoom = room;
     
-    if (room.status === 'AVAILABLE') {
-        openCheckInModal(room);
-    } else {
-        openStatusModal(room);
+    switch (room.status) {
+        case 'AVAILABLE':
+            openAvailableModal(room);
+            break;
+        case 'OCCUPIED':
+            openOccupiedModal(room);
+            break;
+        case 'DIRTY':
+            openDirtyModal(room);
+            break;
+        case 'RESERVED':
+            openReservedModal(room);
+            break;
     }
 }
 
-// Open Check-In Modal
-function openCheckInModal(room) {
-    document.getElementById('roomInfo').innerHTML = `
+// ==================== AVAILABLE ROOM ====================
+
+function openAvailableModal(room) {
+    document.getElementById('availableRoomInfo').innerHTML = `
         <p><strong>Room:</strong> ${room.name}</p>
-        <p><strong>Description:</strong> ${room.description}</p>
-        <p><strong>Rate:</strong> $${room.money}/night</p>
+        <p><strong>Description:</strong> ${room.description || 'N/A'}</p>
+        <p><strong>Default Rate:</strong> $${parseFloat(room.money).toFixed(2)}/night</p>
     `;
+    availableModal.classList.remove('hidden');
+}
+
+function openCheckInModal() {
+    availableModal.classList.add('hidden');
     
     // Reset form
-    document.getElementById('guestIdSearch').value = '';
-    document.getElementById('searchResult').innerHTML = '';
     document.getElementById('searchGuestStep').classList.remove('hidden');
     document.getElementById('newGuestStep').classList.add('hidden');
     document.getElementById('existingGuestStep').classList.add('hidden');
+    document.getElementById('guestIdSearch').value = '';
+    document.getElementById('searchResult').innerHTML = '';
+    
+    document.getElementById('roomInfo').innerHTML = `
+        <p><strong>Room:</strong> ${selectedRoom.name}</p>
+        <p><strong>Default Rate:</strong> $${parseFloat(selectedRoom.money).toFixed(2)}/night</p>
+    `;
+    
+    // Set default price
+    document.getElementById('checkInPrice').value = selectedRoom.money;
+    document.getElementById('existingGuestPrice').value = selectedRoom.money;
     
     checkInModal.classList.remove('hidden');
 }
 
-// Open Status Modal (for non-available rooms)
-async function openStatusModal(room) {
-    document.getElementById('statusRoomInfo').innerHTML = `
-        <p><strong>Room:</strong> ${room.name}</p>
-        <p><strong>Description:</strong> ${room.description}</p>
-        <p><strong>Rate:</strong> $${room.money}/night</p>
-        <p><strong>Current Status:</strong> <span style="color: ${room.statusColor}">${room.status}</span></p>
-    `;
-    
-    const transactionDiv = document.getElementById('currentTransaction');
-    const checkoutSection = document.getElementById('checkOutSection');
-    
-    if (room.status === 'OCCUPIED') {
-        try {
-            const response = await fetch(`${API_URL}/transactions/room/${room.rid}/active`);
-            if (response.ok) {
-                currentTransaction = await response.json();
-                transactionDiv.classList.remove('hidden');
-                transactionDiv.innerHTML = `
-                    <h4>Current Guest</h4>
-                    <p><strong>Guest:</strong> ${currentTransaction.guestName}</p>
-                    <p><strong>ID:</strong> ${currentTransaction.guestIdNumber}</p>
-                    <p><strong>Check-In:</strong> ${currentTransaction.startDate}</p>
-                    <p><strong>Checked in by:</strong> ${currentTransaction.userName}</p>
-                `;
-                checkoutSection.classList.remove('hidden');
-                document.getElementById('totalAmount').value = room.money;
-            } else {
-                transactionDiv.classList.add('hidden');
-                checkoutSection.classList.add('hidden');
-            }
-        } catch (err) {
-            console.error(err);
-            transactionDiv.classList.add('hidden');
-            checkoutSection.classList.add('hidden');
+async function handleReserve() {
+    try {
+        const response = await fetch(`${API_URL}/rooms/${selectedRoom.rid}/reserve`, {
+            method: 'PUT'
+        });
+
+        if (response.ok) {
+            alert(`Room ${selectedRoom.name} has been reserved.`);
+            closeModals();
+            loadRooms();
+            loadStats();
+        } else {
+            const error = await response.json();
+            alert('Reserve failed: ' + (error.error || 'Unknown error'));
         }
-    } else {
-        transactionDiv.classList.add('hidden');
-        checkoutSection.classList.add('hidden');
-        currentTransaction = null;
+    } catch (err) {
+        console.error('Reserve failed:', err);
+        alert('Reserve failed. Please try again.');
     }
-    
-    statusModal.classList.remove('hidden');
 }
 
-// Close Modals
-function closeModals() {
-    checkInModal.classList.add('hidden');
-    statusModal.classList.add('hidden');
-    selectedRoom = null;
-    currentTransaction = null;
-}
+// ==================== CHECK-IN ====================
 
-// Search Guest
 async function searchGuest() {
     const idNumber = document.getElementById('guestIdSearch').value.trim();
     if (!idNumber) {
@@ -398,10 +409,8 @@ async function searchGuest() {
         const result = await response.json();
         
         if (result.found) {
-            // Show existing guest
             showExistingGuest(result.guest);
         } else {
-            // Show new guest form
             showNewGuestForm(idNumber);
         }
     } catch (err) {
@@ -410,16 +419,10 @@ async function searchGuest() {
     }
 }
 
-// Show Existing Guest
 function showExistingGuest(guest) {
     document.getElementById('searchGuestStep').classList.add('hidden');
     document.getElementById('newGuestStep').classList.add('hidden');
     document.getElementById('existingGuestStep').classList.remove('hidden');
-    
-    let notesHtml = '';
-    if (guest.description) {
-        notesHtml = `<div class="guest-notes"><strong>Notes:</strong> ${guest.description}</div>`;
-    }
     
     document.getElementById('existingGuestInfo').innerHTML = `
         <p class="guest-name">${guest.fullName}</p>
@@ -427,16 +430,12 @@ function showExistingGuest(guest) {
         <p><strong>From:</strong> ${guest.state || 'N/A'}, ${guest.country || 'N/A'}</p>
         <p><strong>DOB:</strong> ${guest.dob || 'N/A'}</p>
         <p><strong>Occupation:</strong> ${guest.occupation || 'N/A'}</p>
-        <p><strong>Marriage Status:</strong> ${guest.marriageStatus || 'N/A'}</p>
-        ${notesHtml}
     `;
     
-    // Store guest ID for check-in
     document.getElementById('existingGuestStep').dataset.guestId = guest.gid;
     document.getElementById('existingGuestStep').dataset.guestIdNumber = guest.idNumber;
 }
 
-// Show New Guest Form
 function showNewGuestForm(idNumber) {
     document.getElementById('searchGuestStep').classList.add('hidden');
     document.getElementById('existingGuestStep').classList.add('hidden');
@@ -452,7 +451,6 @@ function showNewGuestForm(idNumber) {
     document.getElementById('guestDescription').value = '';
 }
 
-// Handle New Guest Check-In
 async function handleNewGuestCheckIn(e) {
     e.preventDefault();
     
@@ -466,7 +464,8 @@ async function handleNewGuestCheckIn(e) {
         dob: document.getElementById('guestDob').value || null,
         marriageStatus: document.getElementById('guestMarriage').value,
         occupation: document.getElementById('guestOccupation').value,
-        description: document.getElementById('guestDescription').value
+        description: document.getElementById('guestDescription').value,
+        price: parseFloat(document.getElementById('checkInPrice').value)
     };
 
     try {
@@ -478,7 +477,7 @@ async function handleNewGuestCheckIn(e) {
 
         if (response.ok) {
             const transaction = await response.json();
-            alert(`Check-in successful!\nRoom: ${selectedRoom.name}\nGuest: ${checkInData.fullName}\nTransaction ID: ${transaction.tid}`);
+            alert(`Check-in successful!\nRoom: ${selectedRoom.name}\nGuest: ${checkInData.fullName}\nPrice: $${checkInData.price}`);
             closeModals();
             loadRooms();
             loadStats();
@@ -492,15 +491,16 @@ async function handleNewGuestCheckIn(e) {
     }
 }
 
-// Handle Existing Guest Check-In
 async function handleExistingGuestCheckIn() {
     const existingGuestStep = document.getElementById('existingGuestStep');
     const guestIdNumber = existingGuestStep.dataset.guestIdNumber;
+    const price = parseFloat(document.getElementById('existingGuestPrice').value);
     
     const checkInData = {
         rid: selectedRoom.rid,
         uid: currentUser.uid,
-        guestIdNumber: guestIdNumber
+        guestIdNumber: guestIdNumber,
+        price: price
     };
 
     try {
@@ -512,7 +512,7 @@ async function handleExistingGuestCheckIn() {
 
         if (response.ok) {
             const transaction = await response.json();
-            alert(`Check-in successful!\nRoom: ${selectedRoom.name}\nGuest: ${transaction.guestName}\nTransaction ID: ${transaction.tid}`);
+            alert(`Check-in successful!\nRoom: ${selectedRoom.name}\nGuest: ${transaction.guestName}\nPrice: $${price}`);
             closeModals();
             loadRooms();
             loadStats();
@@ -526,61 +526,66 @@ async function handleExistingGuestCheckIn() {
     }
 }
 
-// Change Room Status
-async function changeRoomStatus(newStatus) {
-    if (!selectedRoom) return;
+// ==================== OCCUPIED ROOM ====================
+
+async function openOccupiedModal(room) {
+    document.getElementById('occupiedRoomInfo').innerHTML = `
+        <p><strong>Room:</strong> ${room.name}</p>
+        <p><strong>Status:</strong> <span class="status-badge occupied">OCCUPIED</span></p>
+    `;
     
-    // Prevent changing occupied room to available directly
-    if (selectedRoom.status === 'OCCUPIED' && newStatus === 'AVAILABLE') {
-        alert('Please check out the guest first before marking the room as available.');
-        return;
-    }
-
+    // Load today's transactions for this room
     try {
-        const response = await fetch(`${API_URL}/rooms/${selectedRoom.rid}/status`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: newStatus })
-        });
-
-        if (response.ok) {
-            alert(`Room ${selectedRoom.name} status changed to ${newStatus}`);
-            closeModals();
-            loadRooms();
-            loadStats();
+        const response = await fetch(`${API_URL}/transactions/room/${room.rid}/today`);
+        const transactions = await response.json();
+        
+        // Find main guest (no parent or has price > 0)
+        const mainTransaction = transactions.find(t => !t.parentTid || t.total > 0);
+        const subGuests = transactions.filter(t => t.parentTid && t.total === 0);
+        
+        if (mainTransaction) {
+            currentMainTransaction = mainTransaction;
+            document.getElementById('occupiedGuestInfo').innerHTML = `
+                <p class="guest-name">Main Guest: ${mainTransaction.guestName}</p>
+                <p><strong>ID:</strong> ${mainTransaction.guestIdNumber}</p>
+                <p><strong>Date:</strong> ${mainTransaction.date}</p>
+                <p><strong>Price:</strong> $${parseFloat(mainTransaction.total).toFixed(2)}</p>
+            `;
         } else {
-            const error = await response.json();
-            alert('Status change failed: ' + (error.error || 'Unknown error'));
+            currentMainTransaction = null;
+            document.getElementById('occupiedGuestInfo').innerHTML = '<p>No guest information available</p>';
+        }
+        
+        // Show sub-guests
+        if (subGuests.length > 0) {
+            document.getElementById('subGuestsList').innerHTML = `
+                <h4>Sub-Guests:</h4>
+                ${subGuests.map(sg => `<p>• ${sg.guestName} (${sg.guestIdNumber})</p>`).join('')}
+            `;
+        } else {
+            document.getElementById('subGuestsList').innerHTML = '';
         }
     } catch (err) {
-        console.error('Status change failed:', err);
-        alert('Status change failed. Please try again.');
+        console.error('Failed to load transaction:', err);
+        document.getElementById('occupiedGuestInfo').innerHTML = '<p>Failed to load guest information</p>';
+        document.getElementById('subGuestsList').innerHTML = '';
     }
+    
+    occupiedModal.classList.remove('hidden');
 }
 
-// Handle Check-Out
 async function handleCheckOut() {
-    if (!currentTransaction) {
-        alert('No active transaction found');
-        return;
-    }
-
-    const total = document.getElementById('totalAmount').value;
-    
-    if (!confirm(`Check out guest ${currentTransaction.guestName}?\nTotal: $${total}`)) {
+    if (!confirm(`Check out from room ${selectedRoom.name}?`)) {
         return;
     }
 
     try {
-        const response = await fetch(`${API_URL}/transactions/${currentTransaction.tid}/checkout`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ total: parseFloat(total) })
+        const response = await fetch(`${API_URL}/transactions/checkout/${selectedRoom.rid}`, {
+            method: 'POST'
         });
 
         if (response.ok) {
-            const transaction = await response.json();
-            alert(`Check-out successful!\nGuest: ${transaction.guestName}\nDays: ${transaction.days}\nTotal: $${transaction.total}`);
+            alert(`Check-out successful!\nRoom ${selectedRoom.name} is now marked as Dirty.`);
             closeModals();
             loadRooms();
             loadStats();
@@ -592,4 +597,263 @@ async function handleCheckOut() {
         console.error('Check-out failed:', err);
         alert('Check-out failed. Please try again.');
     }
+}
+
+// ==================== SUB-GUEST ====================
+
+function openSubGuestModal() {
+    occupiedModal.classList.add('hidden');
+    
+    // Reset form
+    document.getElementById('searchSubGuestStep').classList.remove('hidden');
+    document.getElementById('newSubGuestStep').classList.add('hidden');
+    document.getElementById('existingSubGuestStep').classList.add('hidden');
+    document.getElementById('subGuestIdSearch').value = '';
+    document.getElementById('subGuestSearchResult').innerHTML = '';
+    
+    document.getElementById('subGuestRoomInfo').innerHTML = `
+        <p><strong>Room:</strong> ${selectedRoom.name}</p>
+        <p>Adding sub-guest to this room.</p>
+    `;
+    
+    subGuestModal.classList.remove('hidden');
+}
+
+async function searchSubGuest() {
+    const idNumber = document.getElementById('subGuestIdSearch').value.trim();
+    if (!idNumber) {
+        alert('Please enter an ID number');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/guests/search?idNumber=${encodeURIComponent(idNumber)}`);
+        const result = await response.json();
+        
+        if (result.found) {
+            showExistingSubGuest(result.guest);
+        } else {
+            showNewSubGuestForm(idNumber);
+        }
+    } catch (err) {
+        console.error('Search failed:', err);
+        alert('Search failed. Please try again.');
+    }
+}
+
+function showExistingSubGuest(guest) {
+    document.getElementById('searchSubGuestStep').classList.add('hidden');
+    document.getElementById('newSubGuestStep').classList.add('hidden');
+    document.getElementById('existingSubGuestStep').classList.remove('hidden');
+    
+    document.getElementById('existingSubGuestInfo').innerHTML = `
+        <p class="guest-name">${guest.fullName}</p>
+        <p><strong>ID:</strong> ${guest.idNumber}</p>
+        <p><strong>From:</strong> ${guest.state || 'N/A'}, ${guest.country || 'N/A'}</p>
+    `;
+    
+    document.getElementById('existingSubGuestStep').dataset.guestIdNumber = guest.idNumber;
+}
+
+function showNewSubGuestForm(idNumber) {
+    document.getElementById('searchSubGuestStep').classList.add('hidden');
+    document.getElementById('existingSubGuestStep').classList.add('hidden');
+    document.getElementById('newSubGuestStep').classList.remove('hidden');
+    
+    document.getElementById('subGuestIdNumber').value = idNumber;
+    document.getElementById('subGuestFullName').value = '';
+    document.getElementById('subGuestDob').value = '';
+    document.getElementById('subGuestState').value = '';
+    document.getElementById('subGuestCountry').value = '';
+    document.getElementById('subGuestMarriage').value = '';
+    document.getElementById('subGuestOccupation').value = '';
+}
+
+async function handleNewSubGuest(e) {
+    e.preventDefault();
+    
+    const subGuestData = {
+        rid: selectedRoom.rid,
+        uid: currentUser.uid,
+        guestIdNumber: document.getElementById('subGuestIdNumber').value,
+        fullName: document.getElementById('subGuestFullName').value,
+        state: document.getElementById('subGuestState').value,
+        country: document.getElementById('subGuestCountry').value,
+        dob: document.getElementById('subGuestDob').value || null,
+        marriageStatus: document.getElementById('subGuestMarriage').value,
+        occupation: document.getElementById('subGuestOccupation').value,
+        parentTid: currentMainTransaction ? currentMainTransaction.tid : null
+    };
+
+    try {
+        const response = await fetch(`${API_URL}/transactions/subguest`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(subGuestData)
+        });
+
+        if (response.ok) {
+            alert(`Sub-guest added successfully!`);
+            closeModals();
+            loadRooms();
+        } else {
+            const error = await response.json();
+            alert('Failed to add sub-guest: ' + (error.error || 'Unknown error'));
+        }
+    } catch (err) {
+        console.error('Failed to add sub-guest:', err);
+        alert('Failed to add sub-guest. Please try again.');
+    }
+}
+
+async function handleExistingSubGuest() {
+    const guestIdNumber = document.getElementById('existingSubGuestStep').dataset.guestIdNumber;
+    
+    const subGuestData = {
+        rid: selectedRoom.rid,
+        uid: currentUser.uid,
+        guestIdNumber: guestIdNumber,
+        parentTid: currentMainTransaction ? currentMainTransaction.tid : null
+    };
+
+    try {
+        const response = await fetch(`${API_URL}/transactions/subguest`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(subGuestData)
+        });
+
+        if (response.ok) {
+            alert(`Sub-guest added successfully!`);
+            closeModals();
+            loadRooms();
+        } else {
+            const error = await response.json();
+            alert('Failed to add sub-guest: ' + (error.error || 'Unknown error'));
+        }
+    } catch (err) {
+        console.error('Failed to add sub-guest:', err);
+        alert('Failed to add sub-guest. Please try again.');
+    }
+}
+
+// ==================== CONTINUE STAY ====================
+
+function openContinueStayModal() {
+    occupiedModal.classList.add('hidden');
+    
+    document.getElementById('continueStayRoomInfo').innerHTML = `
+        <p><strong>Room:</strong> ${selectedRoom.name}</p>
+        <p><strong>Main Guest:</strong> ${currentMainTransaction ? currentMainTransaction.guestName : 'Unknown'}</p>
+    `;
+    
+    document.getElementById('continueStayPrice').value = selectedRoom.money;
+    
+    continueStayModal.classList.remove('hidden');
+}
+
+async function handleContinueStay() {
+    const price = parseFloat(document.getElementById('continueStayPrice').value);
+    
+    const continueData = {
+        rid: selectedRoom.rid,
+        uid: currentUser.uid,
+        price: price
+    };
+
+    try {
+        const response = await fetch(`${API_URL}/transactions/continue`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(continueData)
+        });
+
+        if (response.ok) {
+            alert(`Stay continued for another day!\nPrice: $${price}`);
+            closeModals();
+            loadRooms();
+        } else {
+            const error = await response.json();
+            alert('Failed to continue stay: ' + (error.error || 'Unknown error'));
+        }
+    } catch (err) {
+        console.error('Failed to continue stay:', err);
+        alert('Failed to continue stay. Please try again.');
+    }
+}
+
+// ==================== DIRTY ROOM ====================
+
+function openDirtyModal(room) {
+    document.getElementById('dirtyRoomInfo').innerHTML = `
+        <p><strong>Room:</strong> ${room.name}</p>
+        <p><strong>Status:</strong> <span class="status-badge dirty">DIRTY</span></p>
+    `;
+    dirtyModal.classList.remove('hidden');
+}
+
+async function handleMarkClean() {
+    try {
+        const response = await fetch(`${API_URL}/rooms/${selectedRoom.rid}/clean`, {
+            method: 'PUT'
+        });
+
+        if (response.ok) {
+            alert(`Room ${selectedRoom.name} is now available.`);
+            closeModals();
+            loadRooms();
+            loadStats();
+        } else {
+            const error = await response.json();
+            alert('Failed to mark clean: ' + (error.error || 'Unknown error'));
+        }
+    } catch (err) {
+        console.error('Failed to mark clean:', err);
+        alert('Failed to mark clean. Please try again.');
+    }
+}
+
+// ==================== RESERVED ROOM ====================
+
+function openReservedModal(room) {
+    document.getElementById('reservedRoomInfo').innerHTML = `
+        <p><strong>Room:</strong> ${room.name}</p>
+        <p><strong>Status:</strong> <span class="status-badge reserved">RESERVED</span></p>
+    `;
+    reservedModal.classList.remove('hidden');
+}
+
+async function handleUnreserve() {
+    try {
+        const response = await fetch(`${API_URL}/rooms/${selectedRoom.rid}/unreserve`, {
+            method: 'PUT'
+        });
+
+        if (response.ok) {
+            alert(`Room ${selectedRoom.name} is now available.`);
+            closeModals();
+            loadRooms();
+            loadStats();
+        } else {
+            const error = await response.json();
+            alert('Failed to unreserve: ' + (error.error || 'Unknown error'));
+        }
+    } catch (err) {
+        console.error('Failed to unreserve:', err);
+        alert('Failed to unreserve. Please try again.');
+    }
+}
+
+// ==================== UTILITIES ====================
+
+function closeModals() {
+    availableModal.classList.add('hidden');
+    checkInModal.classList.add('hidden');
+    occupiedModal.classList.add('hidden');
+    subGuestModal.classList.add('hidden');
+    continueStayModal.classList.add('hidden');
+    dirtyModal.classList.add('hidden');
+    reservedModal.classList.add('hidden');
+    selectedRoom = null;
+    currentMainTransaction = null;
 }

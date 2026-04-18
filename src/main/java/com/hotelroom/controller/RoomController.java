@@ -57,4 +57,31 @@ public class RoomController {
         }
         return ResponseEntity.ok(stats);
     }
+
+    /**
+     * Reserve a room (AVAILABLE -> RESERVED)
+     */
+    @PutMapping("/{rid}/reserve")
+    public ResponseEntity<RoomDTO> reserveRoom(@PathVariable Long rid) {
+        Room room = roomService.reserveRoom(rid);
+        return ResponseEntity.ok(RoomDTO.fromEntity(room));
+    }
+
+    /**
+     * Unreserve a room (RESERVED -> AVAILABLE)
+     */
+    @PutMapping("/{rid}/unreserve")
+    public ResponseEntity<RoomDTO> unreserveRoom(@PathVariable Long rid) {
+        Room room = roomService.unreserveRoom(rid);
+        return ResponseEntity.ok(RoomDTO.fromEntity(room));
+    }
+
+    /**
+     * Mark dirty room as clean/available (DIRTY -> AVAILABLE)
+     */
+    @PutMapping("/{rid}/clean")
+    public ResponseEntity<RoomDTO> markClean(@PathVariable Long rid) {
+        Room room = roomService.markClean(rid);
+        return ResponseEntity.ok(RoomDTO.fromEntity(room));
+    }
 }

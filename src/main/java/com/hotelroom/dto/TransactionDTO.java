@@ -14,17 +14,17 @@ import java.time.LocalDate;
 public class TransactionDTO {
     
     private Long tid;
-    private Long rid;
-    private Long gid;
-    private Long uid;
-    private LocalDate startDate;
-    private LocalDate endDate;
-    private Integer days;
+    private LocalDate date;
     private BigDecimal total;
+    private Long parentTid;
+    private Long gid;
+    private Long rid;
+    private Long uid;
     
     // For display
     private String roomName;
     private String guestName;
     private String guestIdNumber;
     private String userName;
+    private Boolean isSubGuest;
 }

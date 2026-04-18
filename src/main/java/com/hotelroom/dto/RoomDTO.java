@@ -38,7 +38,6 @@ public class RoomDTO {
             case AVAILABLE -> "#28a745";  // Green
             case OCCUPIED -> "#dc3545";   // Red
             case DIRTY -> "#ffc107";      // Yellow
-            case CLEANING -> "#007bff";   // Blue
             case RESERVED -> "#6f42c1";   // Purple
         };
     }

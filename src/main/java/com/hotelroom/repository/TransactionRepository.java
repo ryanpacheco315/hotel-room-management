@@ -9,7 +9,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
@@ -22,13 +21,30 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     
     List<Transaction> findByGuestGid(Long gid);
     
-    @Query("SELECT t FROM Transaction t WHERE t.room.rid = :rid AND t.endDate IS NULL")
-    Optional<Transaction> findActiveTransactionByRoomId(@Param("rid") Long rid);
+    // Find transactions by date
+    List<Transaction> findByDate(LocalDate date);
     
-    @Query("SELECT t FROM Transaction t WHERE t.startDate BETWEEN :start AND :end")
-    List<Transaction> findByDateRange(@Param("start") LocalDate start, @Param("end") LocalDate end);
+    // Find transactions by date ordered by tid desc
+    List<Transaction> findByDateOrderByTidDesc(LocalDate date);
     
-    List<Transaction> findByEndDateIsNull();
-
+    // Find all transactions ordered by tid desc
     List<Transaction> findAllByOrderByTidDesc();
+    
+    // Find transactions for a room on a specific date (to check if room is occupied today)
+    List<Transaction> findByRoomRidAndDate(Long rid, LocalDate date);
+    
+    // Find main guest transactions for a room on a specific date (parent_tid is null)
+    @Query("SELECT t FROM Transaction t WHERE t.room.rid = :rid AND t.date = :date AND t.parentTransaction IS NULL")
+    List<Transaction> findMainTransactionsByRoomAndDate(@Param("rid") Long rid, @Param("date") LocalDate date);
+    
+    // Find sub-guest transactions for a parent transaction
+    List<Transaction> findByParentTransactionTid(Long parentTid);
+    
+    // Find the original check-in transaction for a stay (follow parent chain to root)
+    @Query("SELECT t FROM Transaction t WHERE t.room.rid = :rid AND t.parentTransaction IS NULL ORDER BY t.date DESC")
+    List<Transaction> findOriginalCheckInsByRoom(@Param("rid") Long rid);
+    
+    // Get latest 50 transactions
+    @Query("SELECT t FROM Transaction t ORDER BY t.tid DESC LIMIT 50")
+    List<Transaction> findTop50ByOrderByTidDesc();
 }

@@ -4,9 +4,11 @@ import com.hotelroom.dto.*;
 import com.hotelroom.entity.*;
 import com.hotelroom.service.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +32,11 @@ public class AdminController {
         return ResponseEntity.ok(guestService.findAll());
     }
 
+    @GetMapping("/guests/search")
+    public ResponseEntity<List<Guest>> searchGuests(@RequestParam String q) {
+        return ResponseEntity.ok(guestService.search(q));
+    }
+
     @GetMapping("/guests/{gid}")
     public ResponseEntity<Map<String, Object>> getGuestWithTransactions(@PathVariable Long gid) {
         Guest guest = guestService.findById(gid);
@@ -49,17 +56,6 @@ public class AdminController {
 
     @DeleteMapping("/guests/{gid}")
     public ResponseEntity<Map<String, String>> deleteGuest(@PathVariable Long gid) {
-        // Check if guest has active transactions
-        List<Transaction> transactions = transactionService.findByGuest(gid);
-        boolean hasActiveTransaction = transactions.stream()
-                .anyMatch(t -> t.getEndDate() == null);
-        
-        if (hasActiveTransaction) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Cannot delete guest with active transactions");
-            return ResponseEntity.badRequest().body(error);
-        }
-        
         guestService.deleteGuest(gid);
         Map<String, String> response = new HashMap<>();
         response.put("message", "Guest deleted successfully");
@@ -129,14 +125,6 @@ public class AdminController {
 
     @DeleteMapping("/transactions/{tid}")
     public ResponseEntity<Map<String, String>> deleteTransaction(@PathVariable Long tid) {
-        Transaction transaction = transactionService.findById(tid);
-        
-        if (transaction.getEndDate() == null) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Cannot delete an active transaction. Check out the guest first.");
-            return ResponseEntity.badRequest().body(error);
-        }
-        
         transactionService.deleteTransaction(tid);
         Map<String, String> response = new HashMap<>();
         response.put("message", "Transaction deleted successfully");
@@ -252,39 +240,16 @@ public class AdminController {
 
     @GetMapping("/partes")
     public ResponseEntity<List<PartesDTO>> getPartes() {
-        List<Transaction> allTransactions = transactionService.findAllOrderByTidDesc();
-        
-        // Get latest 50 transactions
-        List<Transaction> latest50 = allTransactions.stream()
-                .limit(50)
-                .collect(Collectors.toList());
-        
-        // Map to PartesDTO
-        List<PartesDTO> partesList = latest50.stream()
-                .map(t -> {
-                    Guest guest = t.getGuest();
-                    Room room = t.getRoom();
-                    
-                    // Calculate age from date of birth
-                    Integer age = null;
-                    if (guest.getDob() != null) {
-                        age = java.time.Period.between(guest.getDob(), java.time.LocalDate.now()).getYears();
-                    }
-                    
-                    return PartesDTO.builder()
-                            .roomName(room.getName())
-                            .fullName(guest.getFullName())
-                            .country(guest.getCountry())
-                            .age(age)
-                            .marriageStatus(guest.getMarriageStatus())
-                            .occupation(guest.getOccupation())
-                            .idNumber(guest.getIdNumber())
-                            .state(guest.getState())
-                            .checkInDate(t.getStartDate())
-                            .build();
-                })
-                .collect(Collectors.toList());
-        
-        return ResponseEntity.ok(partesList);
+        List<Transaction> latest50 = transactionService.findTop50();
+        return ResponseEntity.ok(transactionService.toPartesDTOList(latest50));
+    }
+
+    // ==================== DAILY REPORT ====================
+
+    @GetMapping("/daily")
+    public ResponseEntity<DailyReportDTO> getDailyReport(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        LocalDate reportDate = date != null ? date : LocalDate.now();
+        return ResponseEntity.ok(transactionService.getDailyReport(reportDate));
     }
 }

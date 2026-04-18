@@ -20,5 +20,5 @@ public class PartesDTO {
     private String occupation;
     private String idNumber;
     private String state;
-    private LocalDate checkInDate;
+    private LocalDate date;
 }

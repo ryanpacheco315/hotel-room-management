@@ -46,7 +46,7 @@
         </header>
 
         <main>
-            <!-- Room Stats -->
+            <!-- Room Stats (4 statuses only) -->
             <div class="stats-container">
                 <div class="stat-card available">
                     <span class="stat-number" id="statAvailable">0</span>
@@ -59,10 +59,6 @@
                 <div class="stat-card dirty">
                     <span class="stat-number" id="statDirty">0</span>
                     <span class="stat-label">Dirty</span>
-                </div>
-                <div class="stat-card cleaning">
-                    <span class="stat-number" id="statCleaning">0</span>
-                    <span class="stat-label">Cleaning</span>
                 </div>
                 <div class="stat-card reserved">
                     <span class="stat-number" id="statReserved">0</span>
@@ -94,6 +90,19 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Available Room Modal (Check-In or Reserve) -->
+    <div id="availableModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Available Room</h2>
+            <div id="availableRoomInfo" class="room-info"></div>
+            <div class="action-buttons-row">
+                <button id="checkInBtn" class="btn btn-success btn-large">Check-In Guest</button>
+                <button id="reserveBtn" class="btn btn-reserved btn-large">Reserve Room</button>
+            </div>
+        </div>
     </div>
 
     <!-- Check-In Modal -->
@@ -157,7 +166,11 @@
                     </div>
                     <div class="form-group">
                         <label for="guestDescription">Notes/Description</label>
-                        <textarea id="guestDescription" rows="3" placeholder="Any notes about this guest..."></textarea>
+                        <textarea id="guestDescription" rows="2" placeholder="Any notes about this guest..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="checkInPrice">Price for Today ($) *</label>
+                        <input type="number" id="checkInPrice" step="0.01" min="0" required>
                     </div>
                     <button type="submit" class="btn btn-success">Confirm Check-In</button>
                 </form>
@@ -167,37 +180,137 @@
             <div id="existingGuestStep" class="hidden">
                 <h3>Returning Guest Found!</h3>
                 <div id="existingGuestInfo" class="guest-info-card"></div>
+                <div class="form-group">
+                    <label for="existingGuestPrice">Price for Today ($) *</label>
+                    <input type="number" id="existingGuestPrice" step="0.01" min="0" required>
+                </div>
                 <button id="confirmExistingGuestBtn" class="btn btn-success">Confirm Check-In</button>
             </div>
         </div>
     </div>
 
-    <!-- Room Status Modal (for non-available rooms) -->
-    <div id="statusModal" class="modal hidden">
+    <!-- Occupied Room Modal -->
+    <div id="occupiedModal" class="modal hidden">
         <div class="modal-content">
             <span class="close-btn">&times;</span>
-            <h2>Room Details</h2>
-            <div id="statusRoomInfo" class="room-info"></div>
-            <div id="currentTransaction" class="transaction-info"></div>
-
-            <div class="status-actions">
-                <h3>Change Status</h3>
-                <div class="status-buttons">
-                    <button class="btn status-btn available" data-status="AVAILABLE">Available</button>
-                    <button class="btn status-btn dirty" data-status="DIRTY">Dirty</button>
-                    <button class="btn status-btn cleaning" data-status="CLEANING">Cleaning</button>
-                    <button class="btn status-btn reserved" data-status="RESERVED">Reserved</button>
-                </div>
+            <h2>Occupied Room</h2>
+            <div id="occupiedRoomInfo" class="room-info"></div>
+            <div id="occupiedGuestInfo" class="guest-info-card"></div>
+            <div id="subGuestsList" class="sub-guests-list"></div>
+            
+            <div class="action-buttons-column">
+                <button id="addSubGuestBtn" class="btn btn-primary">+ Add Sub-Guest</button>
+                <button id="continueStayBtn" class="btn btn-warning">Continue Stay (New Day)</button>
+                <button id="checkOutBtn" class="btn btn-danger">Check Out</button>
             </div>
+        </div>
+    </div>
 
-            <div id="checkOutSection" class="checkout-section hidden">
-                <h3>Check-Out</h3>
+    <!-- Add Sub-Guest Modal -->
+    <div id="subGuestModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Add Sub-Guest</h2>
+            <div id="subGuestRoomInfo" class="room-info"></div>
+            
+            <div id="searchSubGuestStep">
+                <h3>Search Guest by ID</h3>
                 <div class="form-group">
-                    <label for="totalAmount">Total Amount ($)</label>
-                    <input type="number" id="totalAmount" step="0.01" min="0">
+                    <label for="subGuestIdSearch">Guest ID Number</label>
+                    <input type="text" id="subGuestIdSearch" placeholder="Enter ID number">
+                    <button id="searchSubGuestBtn" class="btn btn-primary">Search</button>
                 </div>
-                <button id="checkOutBtn" class="btn btn-warning">Check Out Guest</button>
+                <div id="subGuestSearchResult"></div>
             </div>
+
+            <div id="newSubGuestStep" class="hidden">
+                <h3>New Sub-Guest Information</h3>
+                <form id="newSubGuestForm">
+                    <input type="hidden" id="subGuestIdNumber">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="subGuestFullName">Full Name *</label>
+                            <input type="text" id="subGuestFullName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="subGuestDob">Date of Birth</label>
+                            <input type="date" id="subGuestDob">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="subGuestState">State</label>
+                            <input type="text" id="subGuestState">
+                        </div>
+                        <div class="form-group">
+                            <label for="subGuestCountry">Country</label>
+                            <input type="text" id="subGuestCountry">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="subGuestMarriage">Marriage Status</label>
+                            <select id="subGuestMarriage">
+                                <option value="">Select...</option>
+                                <option value="Single">Single</option>
+                                <option value="Married">Married</option>
+                                <option value="Divorced">Divorced</option>
+                                <option value="Widowed">Widowed</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="subGuestOccupation">Occupation</label>
+                            <input type="text" id="subGuestOccupation">
+                        </div>
+                    </div>
+                    <p class="info-text">Sub-guests are added with $0 price.</p>
+                    <button type="submit" class="btn btn-success">Add Sub-Guest</button>
+                </form>
+            </div>
+
+            <div id="existingSubGuestStep" class="hidden">
+                <h3>Guest Found!</h3>
+                <div id="existingSubGuestInfo" class="guest-info-card"></div>
+                <p class="info-text">Sub-guests are added with $0 price.</p>
+                <button id="confirmSubGuestBtn" class="btn btn-success">Add Sub-Guest</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Continue Stay Modal -->
+    <div id="continueStayModal" class="modal hidden">
+        <div class="modal-content modal-small">
+            <span class="close-btn">&times;</span>
+            <h2>Continue Stay</h2>
+            <div id="continueStayRoomInfo" class="room-info"></div>
+            <p>The main guest will continue their stay for another day.</p>
+            <div class="form-group">
+                <label for="continueStayPrice">Price for Today ($) *</label>
+                <input type="number" id="continueStayPrice" step="0.01" min="0" required>
+            </div>
+            <button id="confirmContinueStayBtn" class="btn btn-success">Confirm Continue Stay</button>
+        </div>
+    </div>
+
+    <!-- Dirty Room Modal -->
+    <div id="dirtyModal" class="modal hidden">
+        <div class="modal-content modal-small">
+            <span class="close-btn">&times;</span>
+            <h2>Dirty Room</h2>
+            <div id="dirtyRoomInfo" class="room-info"></div>
+            <p>Mark this room as clean and available?</p>
+            <button id="markCleanBtn" class="btn btn-success btn-large">Mark as Available</button>
+        </div>
+    </div>
+
+    <!-- Reserved Room Modal -->
+    <div id="reservedModal" class="modal hidden">
+        <div class="modal-content modal-small">
+            <span class="close-btn">&times;</span>
+            <h2>Reserved Room</h2>
+            <div id="reservedRoomInfo" class="room-info"></div>
+            <p>This room is currently reserved.</p>
+            <button id="unreserveBtn" class="btn btn-success btn-large">Make Available</button>
         </div>
     </div>
 
