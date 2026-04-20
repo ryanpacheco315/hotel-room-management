@@ -12,6 +12,10 @@ let transactions = [];
 let users = [];
 let partes = [];
 let dailyReport = null;
+let weeklyReport = null;
+let monthlyReport = null;
+let yearlyReport = null;
+let availableYears = [];
 
 // Pagination state
 let guestsPage = 0;
@@ -70,6 +74,8 @@ function showAdminPanel() {
     // Set today's date for daily report
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('dailyDateInput').value = today;
+    
+    // Initialize income report (will load when tab is opened)
 }
 
 function setupEventListeners() {
@@ -141,6 +147,24 @@ function setupEventListeners() {
     document.getElementById('loadDailyBtn').addEventListener('click', loadDailyReport);
     document.getElementById('dailyPrevBtn').addEventListener('click', goToPreviousDay);
     document.getElementById('dailyNextBtn').addEventListener('click', goToNextDay);
+    
+    // Income report sub-tabs
+    document.querySelectorAll('.income-sub-btn').forEach(btn => {
+        btn.addEventListener('click', () => switchIncomeSubTab(btn.dataset.incomeTab));
+    });
+    
+    // Week report
+    document.getElementById('loadWeekBtn').addEventListener('click', () => {
+        const weekInput = document.getElementById('weekPickerInput').value;
+        if (weekInput) loadWeeklyReport(weekInput);
+    });
+    
+    // Month report
+    document.getElementById('loadMonthBtn').addEventListener('click', () => {
+        const month = document.getElementById('monthPickerMonth').value;
+        const year = document.getElementById('monthPickerYear').value;
+        if (month && year) loadMonthlyReport(parseInt(year), parseInt(month));
+    });
 }
 
 function logout() {
@@ -174,6 +198,11 @@ function switchTab(tabName) {
         document.getElementById('dailyDateInput').value = today;
         dailyReport = null;
         loadDailyReport();
+    }
+    
+    // When switching to income tab, initialize it
+    if (tabName === 'income') {
+        initializeIncomeReport();
     }
 }
 
@@ -391,6 +420,401 @@ function updateDailyNavButtons() {
     }
 }
 
+// ==================== INCOME REPORT ====================
+
+let weekChart = null;
+let monthChart = null;
+let yearChart = null;
+let incomeInitialized = false;
+
+async function initializeIncomeReport() {
+    if (incomeInitialized) {
+        // Just reload current week data when returning to tab
+        loadCurrentWeekReport();
+        return;
+    }
+    
+    // Load available years first
+    try {
+        const response = await fetch(`${API_BASE}/admin/income/years`);
+        availableYears = await response.json();
+    } catch (error) {
+        console.error('Error loading available years:', error);
+        availableYears = [new Date().getFullYear()];
+    }
+    
+    // Setup year picker for month tab
+    const yearSelect = document.getElementById('monthPickerYear');
+    yearSelect.innerHTML = availableYears.map(y => `<option value="${y}">${y}</option>`).join('');
+    
+    // Set current month in picker
+    const now = new Date();
+    document.getElementById('monthPickerMonth').value = now.getMonth() + 1;
+    document.getElementById('monthPickerYear').value = now.getFullYear();
+    
+    // Generate quick buttons
+    generateWeekQuickButtons();
+    generateMonthQuickButtons();
+    generateYearQuickButtons();
+    
+    // Load current week by default
+    loadCurrentWeekReport();
+    
+    incomeInitialized = true;
+}
+
+function switchIncomeSubTab(subTabName) {
+    // Update sub-tab buttons
+    document.querySelectorAll('.income-sub-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.incomeTab === subTabName);
+    });
+    
+    // Update sub-tab content
+    document.querySelectorAll('.income-sub-content').forEach(content => {
+        content.classList.add('hidden');
+    });
+    document.getElementById(`${subTabName}SubTab`).classList.remove('hidden');
+    
+    // Load data for the sub-tab
+    if (subTabName === 'week' && !weeklyReport) {
+        loadCurrentWeekReport();
+    } else if (subTabName === 'month' && !monthlyReport) {
+        loadCurrentMonthReport();
+    } else if (subTabName === 'year' && !yearlyReport) {
+        loadCurrentYearReport();
+    }
+}
+
+// ==================== WEEK REPORT ====================
+
+function getMonday(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(d.setDate(diff));
+}
+
+function generateWeekQuickButtons() {
+    const container = document.getElementById('weekQuickButtons');
+    const today = new Date();
+    const buttons = [];
+    
+    for (let i = 0; i < 4; i++) {
+        const weekDate = new Date(today);
+        weekDate.setDate(today.getDate() - (i * 7));
+        const monday = getMonday(weekDate);
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        
+        const label = i === 0 ? 'This Week' : 
+                      i === 1 ? 'Last Week' : 
+                      `${monday.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})} - ${sunday.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}`;
+        
+        const mondayStr = monday.toISOString().split('T')[0];
+        buttons.push(`<button class="quick-btn ${i === 0 ? 'active' : ''}" data-week="${mondayStr}" onclick="loadWeeklyReport('${mondayStr}')">${label}</button>`);
+    }
+    
+    container.innerHTML = buttons.join('');
+    
+    // Set week picker to current Monday
+    const currentMonday = getMonday(today);
+    document.getElementById('weekPickerInput').value = currentMonday.toISOString().split('T')[0];
+}
+
+function loadCurrentWeekReport() {
+    const monday = getMonday(new Date());
+    loadWeeklyReport(monday.toISOString().split('T')[0]);
+}
+
+async function loadWeeklyReport(weekStart) {
+    try {
+        const response = await fetch(`${API_BASE}/admin/income/weekly?weekStart=${weekStart}`);
+        weeklyReport = await response.json();
+        renderWeeklyReport();
+        
+        // Update active button
+        document.querySelectorAll('#weekQuickButtons .quick-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.week === weekStart);
+        });
+    } catch (error) {
+        console.error('Error loading weekly report:', error);
+    }
+}
+
+function renderWeeklyReport() {
+    if (!weeklyReport) return;
+    
+    // Update summary
+    const startDate = new Date(weeklyReport.startDate + 'T00:00:00');
+    const endDate = new Date(weeklyReport.endDate + 'T00:00:00');
+    document.getElementById('weekReportPeriod').textContent = 
+        `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
+    document.getElementById('weekTotalAmount').textContent = 
+        `$${parseFloat(weeklyReport.totalIncome || 0).toFixed(2)}`;
+    document.getElementById('weekTransactionCount').textContent = 
+        weeklyReport.transactionCount || 0;
+    
+    // Render chart
+    renderWeekChart();
+    
+    // Render breakdown table
+    const tbody = document.querySelector('#weekBreakdownTable tbody');
+    const daily = weeklyReport.dailyBreakdown || [];
+    tbody.innerHTML = daily.map(d => `
+        <tr>
+            <td>${d.dayName}</td>
+            <td>${d.date}</td>
+            <td>$${parseFloat(d.income || 0).toFixed(2)}</td>
+            <td>${d.transactionCount}</td>
+        </tr>
+    `).join('');
+    
+    // Render room frequency
+    renderRoomFrequency('weekRoomFreqTable', weeklyReport.roomFrequency);
+}
+
+function renderWeekChart() {
+    const ctx = document.getElementById('weekChart').getContext('2d');
+    const daily = weeklyReport.dailyBreakdown || [];
+    
+    if (weekChart) weekChart.destroy();
+    
+    weekChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: daily.map(d => d.dayName),
+            datasets: [{
+                label: 'Daily Income ($)',
+                data: daily.map(d => parseFloat(d.income || 0)),
+                backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                borderColor: 'rgba(102, 126, 234, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+
+// ==================== MONTH REPORT ====================
+
+function generateMonthQuickButtons() {
+    const container = document.getElementById('monthQuickButtons');
+    const today = new Date();
+    const buttons = [];
+    
+    for (let i = 0; i < 3; i++) {
+        const monthDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        const year = monthDate.getFullYear();
+        const month = monthDate.getMonth() + 1;
+        const label = i === 0 ? 'This Month' : 
+                      monthDate.toLocaleDateString('en-US', {month: 'long', year: 'numeric'});
+        
+        buttons.push(`<button class="quick-btn ${i === 0 ? 'active' : ''}" data-year="${year}" data-month="${month}" onclick="loadMonthlyReport(${year}, ${month})">${label}</button>`);
+    }
+    
+    container.innerHTML = buttons.join('');
+}
+
+function loadCurrentMonthReport() {
+    const now = new Date();
+    loadMonthlyReport(now.getFullYear(), now.getMonth() + 1);
+}
+
+async function loadMonthlyReport(year, month) {
+    try {
+        const response = await fetch(`${API_BASE}/admin/income/monthly?year=${year}&month=${month}`);
+        monthlyReport = await response.json();
+        renderMonthlyReport();
+        
+        // Update active button
+        document.querySelectorAll('#monthQuickButtons .quick-btn').forEach(btn => {
+            btn.classList.toggle('active', 
+                parseInt(btn.dataset.year) === year && parseInt(btn.dataset.month) === month);
+        });
+    } catch (error) {
+        console.error('Error loading monthly report:', error);
+    }
+}
+
+function renderMonthlyReport() {
+    if (!monthlyReport) return;
+    
+    // Update summary
+    const startDate = new Date(monthlyReport.startDate + 'T00:00:00');
+    document.getElementById('monthReportPeriod').textContent = 
+        startDate.toLocaleDateString('en-US', {month: 'long', year: 'numeric'});
+    document.getElementById('monthTotalAmount').textContent = 
+        `$${parseFloat(monthlyReport.totalIncome || 0).toFixed(2)}`;
+    document.getElementById('monthTransactionCount').textContent = 
+        monthlyReport.transactionCount || 0;
+    
+    // Render chart
+    renderMonthChart();
+    
+    // Render breakdown table
+    const tbody = document.querySelector('#monthBreakdownTable tbody');
+    const weekly = monthlyReport.weeklyBreakdown || [];
+    tbody.innerHTML = weekly.map(w => `
+        <tr>
+            <td>Week ${w.weekNumber}</td>
+            <td>${w.weekStart} to ${w.weekEnd}</td>
+            <td>$${parseFloat(w.income || 0).toFixed(2)}</td>
+            <td>${w.transactionCount}</td>
+        </tr>
+    `).join('');
+    
+    // Render room frequency
+    renderRoomFrequency('monthRoomFreqTable', monthlyReport.roomFrequency);
+}
+
+function renderMonthChart() {
+    const ctx = document.getElementById('monthChart').getContext('2d');
+    const weekly = monthlyReport.weeklyBreakdown || [];
+    
+    if (monthChart) monthChart.destroy();
+    
+    monthChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: weekly.map(w => `Week ${w.weekNumber}`),
+            datasets: [{
+                label: 'Weekly Income ($)',
+                data: weekly.map(w => parseFloat(w.income || 0)),
+                backgroundColor: 'rgba(118, 75, 162, 0.7)',
+                borderColor: 'rgba(118, 75, 162, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+
+// ==================== YEAR REPORT ====================
+
+function generateYearQuickButtons() {
+    const container = document.getElementById('yearQuickButtons');
+    const currentYear = new Date().getFullYear();
+    
+    // Generate years from 2014 to current year
+    const years = [];
+    for (let y = currentYear; y >= 2014; y--) {
+        years.push(y);
+    }
+    
+    const buttons = years.map(y => 
+        `<button class="quick-btn ${y === currentYear ? 'active' : ''}" data-year="${y}" onclick="loadYearlyReport(${y})">${y}</button>`
+    ).join('');
+    
+    container.innerHTML = buttons;
+}
+
+function loadCurrentYearReport() {
+    loadYearlyReport(new Date().getFullYear());
+}
+
+async function loadYearlyReport(year) {
+    try {
+        const response = await fetch(`${API_BASE}/admin/income/yearly?year=${year}`);
+        yearlyReport = await response.json();
+        renderYearlyReport();
+        
+        // Update active button
+        document.querySelectorAll('#yearQuickButtons .quick-btn').forEach(btn => {
+            btn.classList.toggle('active', parseInt(btn.dataset.year) === year);
+        });
+    } catch (error) {
+        console.error('Error loading yearly report:', error);
+    }
+}
+
+function renderYearlyReport() {
+    if (!yearlyReport) return;
+    
+    // Update summary
+    const startDate = new Date(yearlyReport.startDate + 'T00:00:00');
+    document.getElementById('yearReportPeriod').textContent = startDate.getFullYear();
+    document.getElementById('yearTotalAmount').textContent = 
+        `$${parseFloat(yearlyReport.totalIncome || 0).toFixed(2)}`;
+    document.getElementById('yearTransactionCount').textContent = 
+        yearlyReport.transactionCount || 0;
+    
+    // Render chart
+    renderYearChart();
+    
+    // Render breakdown table
+    const tbody = document.querySelector('#yearBreakdownTable tbody');
+    const monthly = yearlyReport.monthlyBreakdown || [];
+    tbody.innerHTML = monthly.map(m => `
+        <tr>
+            <td>${m.monthName}</td>
+            <td>$${parseFloat(m.income || 0).toFixed(2)}</td>
+            <td>${m.transactionCount}</td>
+        </tr>
+    `).join('');
+    
+    // Render room frequency
+    renderRoomFrequency('yearRoomFreqTable', yearlyReport.roomFrequency);
+}
+
+function renderYearChart() {
+    const ctx = document.getElementById('yearChart').getContext('2d');
+    const monthly = yearlyReport.monthlyBreakdown || [];
+    
+    if (yearChart) yearChart.destroy();
+    
+    yearChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: monthly.map(m => m.monthName.substring(0, 3)),
+            datasets: [{
+                label: 'Monthly Income ($)',
+                data: monthly.map(m => parseFloat(m.income || 0)),
+                backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                borderColor: 'rgba(40, 167, 69, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+
+// ==================== ROOM FREQUENCY ====================
+
+function renderRoomFrequency(tableId, roomFrequency) {
+    const tbody = document.querySelector(`#${tableId} tbody`);
+    const data = roomFrequency || [];
+    
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="2" class="no-data">No paid transactions</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = data.map(r => `
+        <tr>
+            <td>${r.roomName}</td>
+            <td>${r.count}</td>
+        </tr>
+    `).join('');
+}
+
 // ==================== TABLE RENDERING ====================
 
 function renderGuestsTable() {
@@ -464,7 +888,7 @@ function renderTransactionsTable() {
     tbody.innerHTML = sortedTransactions.map(t => `
         <tr>
             <td>${t.tid}</td>
-            <td>${t.date || '-'}</td>
+            <td>${t.dateFormatted || t.date || '-'}</td>
             <td>${t.roomName}</td>
             <td>${t.guestName}</td>
             <td>${t.userName}</td>

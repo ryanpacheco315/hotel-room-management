@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "transactions")
@@ -22,7 +22,7 @@ public class Transaction {
     private Long tid;
 
     @Column(name = "date", nullable = false)
-    private LocalDate date;
+    private LocalDateTime date;
 
     @Column(name = "total", precision = 10, scale = 2)
     private BigDecimal total;
@@ -46,7 +46,7 @@ public class Transaction {
     @PrePersist
     protected void onCreate() {
         if (date == null) {
-            date = LocalDate.now();
+            date = LocalDateTime.now();
         }
     }
 }

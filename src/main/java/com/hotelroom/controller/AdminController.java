@@ -260,4 +260,36 @@ public class AdminController {
         LocalDate reportDate = date != null ? date : LocalDate.now();
         return ResponseEntity.ok(transactionService.getDailyReport(reportDate));
     }
+
+    // ==================== INCOME REPORT ====================
+
+    @GetMapping("/income-report")
+    public ResponseEntity<IncomeReportDTO> getIncomeReport(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(transactionService.getIncomeReport(startDate, endDate));
+    }
+
+    @GetMapping("/income/weekly")
+    public ResponseEntity<IncomeReportDTO> getWeeklyReport(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStart) {
+        return ResponseEntity.ok(transactionService.getWeeklyReport(weekStart));
+    }
+
+    @GetMapping("/income/monthly")
+    public ResponseEntity<IncomeReportDTO> getMonthlyReport(
+            @RequestParam int year,
+            @RequestParam int month) {
+        return ResponseEntity.ok(transactionService.getMonthlyReport(year, month));
+    }
+
+    @GetMapping("/income/yearly")
+    public ResponseEntity<IncomeReportDTO> getYearlyReport(@RequestParam int year) {
+        return ResponseEntity.ok(transactionService.getYearlyReport(year));
+    }
+
+    @GetMapping("/income/years")
+    public ResponseEntity<List<Integer>> getAvailableYears() {
+        return ResponseEntity.ok(transactionService.getAvailableYears());
+    }
 }

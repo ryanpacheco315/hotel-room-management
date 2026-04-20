@@ -6,6 +6,7 @@
     <title>Admin Panel - Hotel Room Management</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <!-- Login Required Check -->
@@ -39,6 +40,7 @@
                 <button class="tab-btn" data-tab="users">👤 Users</button>
                 <button class="tab-btn" data-tab="partes">📄 Partes</button>
                 <button class="tab-btn" data-tab="daily">📊 Daily</button>
+                <button class="tab-btn" data-tab="income">💰 Income Report</button>
             </div>
 
             <!-- Guests Tab -->
@@ -101,7 +103,7 @@
                 <div class="table-header">
                     <h2>Transaction Management</h2>
                     <div class="search-box">
-                        <input type="text" id="transactionSearchInput" placeholder="Search by TID or Employee Name...">
+                        <input type="text" id="transactionSearchInput" placeholder="Search by TID or Guest Name...">
                         <button id="transactionSearchBtn" class="btn btn-primary">Search</button>
                         <button id="transactionClearBtn" class="btn btn-secondary">Clear</button>
                     </div>
@@ -219,6 +221,175 @@
                         </thead>
                         <tbody></tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- Income Report Tab -->
+            <div id="incomeTab" class="tab-content hidden">
+                <!-- Sub-tabs for Week/Month/Year -->
+                <div class="income-sub-tabs">
+                    <button class="income-sub-btn active" data-income-tab="week">📅 Week</button>
+                    <button class="income-sub-btn" data-income-tab="month">📆 Month</button>
+                    <button class="income-sub-btn" data-income-tab="year">📊 Year</button>
+                </div>
+
+                <!-- Week Sub-Tab -->
+                <div id="weekSubTab" class="income-sub-content">
+                    <div class="quick-select-section">
+                        <h3>Quick Select Week</h3>
+                        <div id="weekQuickButtons" class="quick-buttons"></div>
+                        <div class="week-picker">
+                            <label>Or select a Monday:</label>
+                            <input type="date" id="weekPickerInput">
+                            <button id="loadWeekBtn" class="btn btn-primary">Load Week</button>
+                        </div>
+                    </div>
+                    <div class="income-summary">
+                        <div class="summary-card">
+                            <span class="summary-label">Week Period:</span>
+                            <span id="weekReportPeriod" class="summary-value">-</span>
+                        </div>
+                        <div class="summary-card total-income">
+                            <span class="summary-label">Total Income:</span>
+                            <span id="weekTotalAmount" class="summary-value">$0.00</span>
+                        </div>
+                        <div class="summary-card">
+                            <span class="summary-label">Transactions:</span>
+                            <span id="weekTransactionCount" class="summary-value">0</span>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="weekChart"></canvas>
+                    </div>
+                    <div class="report-tables">
+                        <div class="table-section">
+                            <h4>Daily Breakdown</h4>
+                            <table id="weekBreakdownTable">
+                                <thead>
+                                    <tr><th>Day</th><th>Date</th><th>Income</th><th>Transactions</th></tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div class="table-section">
+                            <h4>Room Occupancy Frequency (Paid Only)</h4>
+                            <table id="weekRoomFreqTable">
+                                <thead>
+                                    <tr><th>Room</th><th>Times Occupied</th></tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Month Sub-Tab -->
+                <div id="monthSubTab" class="income-sub-content hidden">
+                    <div class="quick-select-section">
+                        <h3>Quick Select Month</h3>
+                        <div id="monthQuickButtons" class="quick-buttons"></div>
+                        <div class="month-picker">
+                            <label>Or select month:</label>
+                            <select id="monthPickerMonth">
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                            <select id="monthPickerYear"></select>
+                            <button id="loadMonthBtn" class="btn btn-primary">Load Month</button>
+                        </div>
+                    </div>
+                    <div class="income-summary">
+                        <div class="summary-card">
+                            <span class="summary-label">Month:</span>
+                            <span id="monthReportPeriod" class="summary-value">-</span>
+                        </div>
+                        <div class="summary-card total-income">
+                            <span class="summary-label">Total Income:</span>
+                            <span id="monthTotalAmount" class="summary-value">$0.00</span>
+                        </div>
+                        <div class="summary-card">
+                            <span class="summary-label">Transactions:</span>
+                            <span id="monthTransactionCount" class="summary-value">0</span>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="monthChart"></canvas>
+                    </div>
+                    <div class="report-tables">
+                        <div class="table-section">
+                            <h4>Weekly Breakdown</h4>
+                            <table id="monthBreakdownTable">
+                                <thead>
+                                    <tr><th>Week</th><th>Period</th><th>Income</th><th>Transactions</th></tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div class="table-section">
+                            <h4>Room Occupancy Frequency (Paid Only)</h4>
+                            <table id="monthRoomFreqTable">
+                                <thead>
+                                    <tr><th>Room</th><th>Times Occupied</th></tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Year Sub-Tab -->
+                <div id="yearSubTab" class="income-sub-content hidden">
+                    <div class="quick-select-section">
+                        <h3>Select Year</h3>
+                        <div id="yearQuickButtons" class="quick-buttons"></div>
+                    </div>
+                    <div class="income-summary">
+                        <div class="summary-card">
+                            <span class="summary-label">Year:</span>
+                            <span id="yearReportPeriod" class="summary-value">-</span>
+                        </div>
+                        <div class="summary-card total-income">
+                            <span class="summary-label">Total Income:</span>
+                            <span id="yearTotalAmount" class="summary-value">$0.00</span>
+                        </div>
+                        <div class="summary-card">
+                            <span class="summary-label">Transactions:</span>
+                            <span id="yearTransactionCount" class="summary-value">0</span>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="yearChart"></canvas>
+                    </div>
+                    <div class="report-tables">
+                        <div class="table-section">
+                            <h4>Monthly Breakdown</h4>
+                            <table id="yearBreakdownTable">
+                                <thead>
+                                    <tr><th>Month</th><th>Income</th><th>Transactions</th></tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div class="table-section">
+                            <h4>Room Occupancy Frequency (Paid Only)</h4>
+                            <table id="yearRoomFreqTable">
+                                <thead>
+                                    <tr><th>Room</th><th>Times Occupied</th></tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>

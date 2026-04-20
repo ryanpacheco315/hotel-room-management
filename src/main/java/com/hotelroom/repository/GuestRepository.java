@@ -25,8 +25,8 @@ public interface GuestRepository extends JpaRepository<Guest, Long> {
     // Search by full name containing (case insensitive)
     List<Guest> findByFullNameContainingIgnoreCase(String fullName);
     
-    // Search by ID number OR full name containing (case insensitive)
-    @Query("SELECT g FROM Guest g WHERE LOWER(g.idNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(g.fullName) LIKE LOWER(CONCAT('%', :search, '%'))")
+    // Search by ID number (exact match) OR full name (partial match, case insensitive)
+    @Query("SELECT g FROM Guest g WHERE g.idNumber = :search OR LOWER(g.fullName) LIKE LOWER(CONCAT('%', :search, '%'))")
     List<Guest> searchByIdNumberOrName(@Param("search") String search);
     
     // Paginated queries
