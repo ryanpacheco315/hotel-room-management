@@ -12,7 +12,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TransactionDTO {
-    
+
     private Long tid;
     private LocalDate date;
     private BigDecimal total;
@@ -20,7 +20,7 @@ public class TransactionDTO {
     private Long gid;
     private Long rid;
     private Long uid;
-    
+
     // For display
     private String roomName;
     private String guestName;

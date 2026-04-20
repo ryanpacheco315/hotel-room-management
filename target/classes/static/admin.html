@@ -67,6 +67,11 @@
                         <tbody></tbody>
                     </table>
                 </div>
+                <div class="pagination-controls" id="guestsPagination">
+                    <button id="guestsPrevBtn" class="btn btn-secondary pagination-btn" disabled>← Previous 100</button>
+                    <span id="guestsPageInfo" class="page-info">Page 1</span>
+                    <button id="guestsNextBtn" class="btn btn-secondary pagination-btn">Next 100 →</button>
+                </div>
             </div>
 
             <!-- Rooms Tab -->
@@ -95,6 +100,11 @@
             <div id="transactionsTab" class="tab-content hidden">
                 <div class="table-header">
                     <h2>Transaction Management</h2>
+                    <div class="search-box">
+                        <input type="text" id="transactionSearchInput" placeholder="Search by TID or Employee Name...">
+                        <button id="transactionSearchBtn" class="btn btn-primary">Search</button>
+                        <button id="transactionClearBtn" class="btn btn-secondary">Clear</button>
+                    </div>
                 </div>
                 <div class="table-container">
                     <table id="transactionsTable">
@@ -112,6 +122,11 @@
                         </thead>
                         <tbody></tbody>
                     </table>
+                </div>
+                <div class="pagination-controls" id="transactionsPagination">
+                    <button id="transactionsPrevBtn" class="btn btn-secondary pagination-btn" disabled>← Previous 100</button>
+                    <span id="transactionsPageInfo" class="page-info">Page 1</span>
+                    <button id="transactionsNextBtn" class="btn btn-secondary pagination-btn">Next 100 →</button>
                 </div>
             </div>
 
@@ -168,9 +183,11 @@
             <div id="dailyTab" class="tab-content hidden">
                 <div class="table-header">
                     <h2>Daily Transactions</h2>
-                    <div class="date-picker-box">
+                    <div class="date-nav-box">
+                        <button id="dailyPrevBtn" class="btn btn-secondary">← Previous Day</button>
                         <input type="date" id="dailyDateInput">
                         <button id="loadDailyBtn" class="btn btn-primary">Load</button>
+                        <button id="dailyNextBtn" class="btn btn-secondary">Next Day →</button>
                     </div>
                 </div>
                 <div class="daily-summary">

@@ -5,9 +5,12 @@ import com.hotelroom.entity.Guest;
 import com.hotelroom.exception.ResourceNotFoundException;
 import com.hotelroom.repository.GuestRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -18,6 +21,23 @@ public class GuestService {
 
     public List<Guest> findAll() {
         return guestRepository.findAllByOrderByGidDesc();
+    }
+    
+    /**
+     * Get guests with pagination
+     */
+    public Map<String, Object> findAllPaginated(int page, int size) {
+        List<Guest> guests = guestRepository.findAllPaginated(PageRequest.of(page, size));
+        long total = guestRepository.countAllGuests();
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", guests);
+        result.put("total", total);
+        result.put("page", page);
+        result.put("size", size);
+        result.put("hasMore", (page + 1) * size < total);
+        
+        return result;
     }
 
     public Guest findById(Long gid) {

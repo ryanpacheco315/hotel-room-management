@@ -13,6 +13,19 @@ let users = [];
 let partes = [];
 let dailyReport = null;
 
+// Pagination state
+let guestsPage = 0;
+let guestsTotalPages = 1;
+let guestsHasMore = false;
+let guestsSearchMode = false;
+
+let transactionsPage = 0;
+let transactionsTotalPages = 1;
+let transactionsHasMore = false;
+let transactionsSearchMode = false;
+
+const PAGE_SIZE = 100;
+
 // ==================== INITIALIZATION ====================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -109,8 +122,25 @@ function setupEventListeners() {
     });
     document.getElementById('guestClearBtn').addEventListener('click', clearGuestSearch);
     
+    // Guest pagination
+    document.getElementById('guestsPrevBtn').addEventListener('click', () => loadGuestsPage(guestsPage - 1));
+    document.getElementById('guestsNextBtn').addEventListener('click', () => loadGuestsPage(guestsPage + 1));
+    
+    // Transaction search
+    document.getElementById('transactionSearchBtn').addEventListener('click', searchTransactions);
+    document.getElementById('transactionSearchInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') searchTransactions();
+    });
+    document.getElementById('transactionClearBtn').addEventListener('click', clearTransactionSearch);
+    
+    // Transaction pagination
+    document.getElementById('transactionsPrevBtn').addEventListener('click', () => loadTransactionsPage(transactionsPage - 1));
+    document.getElementById('transactionsNextBtn').addEventListener('click', () => loadTransactionsPage(transactionsPage + 1));
+    
     // Daily report
     document.getElementById('loadDailyBtn').addEventListener('click', loadDailyReport);
+    document.getElementById('dailyPrevBtn').addEventListener('click', goToPreviousDay);
+    document.getElementById('dailyNextBtn').addEventListener('click', goToNextDay);
 }
 
 function logout() {
@@ -138,8 +168,11 @@ function switchTab(tabName) {
         th.classList.remove('sort-asc', 'sort-desc');
     });
     
-    // Load daily report when switching to daily tab
-    if (tabName === 'daily' && !dailyReport) {
+    // When switching to daily tab, always reload today's data
+    if (tabName === 'daily') {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('dailyDateInput').value = today;
+        dailyReport = null;
         loadDailyReport();
     }
 }
@@ -148,19 +181,31 @@ function switchTab(tabName) {
 
 async function loadAllData() {
     await Promise.all([
-        loadGuests(),
+        loadGuestsPage(0),
         loadRooms(),
-        loadTransactions(),
+        loadTransactionsPage(0),
         loadUsers(),
         loadPartes()
     ]);
 }
 
-async function loadGuests() {
+// ==================== GUESTS WITH PAGINATION ====================
+
+async function loadGuestsPage(page) {
+    if (page < 0) return;
+    
     try {
-        const response = await fetch(`${API_BASE}/admin/guests`);
-        guests = await response.json();
+        const response = await fetch(`${API_BASE}/admin/guests?page=${page}&size=${PAGE_SIZE}`);
+        const result = await response.json();
+        
+        guests = result.data || [];
+        guestsPage = result.page;
+        guestsHasMore = result.hasMore;
+        guestsTotalPages = Math.ceil(result.total / PAGE_SIZE);
+        guestsSearchMode = false;
+        
         renderGuestsTable();
+        updateGuestsPagination();
     } catch (error) {
         console.error('Error loading guests:', error);
     }
@@ -169,14 +214,18 @@ async function loadGuests() {
 async function searchGuests() {
     const searchTerm = document.getElementById('guestSearchInput').value.trim();
     if (!searchTerm) {
-        loadGuests();
+        clearGuestSearch();
         return;
     }
     
     try {
         const response = await fetch(`${API_BASE}/admin/guests/search?q=${encodeURIComponent(searchTerm)}`);
         guests = await response.json();
+        guestsSearchMode = true;
         renderGuestsTable();
+        
+        // Hide pagination when searching
+        document.getElementById('guestsPagination').style.display = 'none';
     } catch (error) {
         console.error('Error searching guests:', error);
     }
@@ -184,8 +233,85 @@ async function searchGuests() {
 
 function clearGuestSearch() {
     document.getElementById('guestSearchInput').value = '';
-    loadGuests();
+    guestsSearchMode = false;
+    document.getElementById('guestsPagination').style.display = 'flex';
+    loadGuestsPage(0);
 }
+
+function updateGuestsPagination() {
+    const prevBtn = document.getElementById('guestsPrevBtn');
+    const nextBtn = document.getElementById('guestsNextBtn');
+    const pageInfo = document.getElementById('guestsPageInfo');
+    
+    prevBtn.disabled = guestsPage === 0;
+    nextBtn.disabled = !guestsHasMore;
+    pageInfo.textContent = `Page ${guestsPage + 1} of ${guestsTotalPages}`;
+    
+    document.getElementById('guestsPagination').style.display = 'flex';
+}
+
+// ==================== TRANSACTIONS WITH PAGINATION ====================
+
+async function loadTransactionsPage(page) {
+    if (page < 0) return;
+    
+    try {
+        const response = await fetch(`${API_BASE}/admin/transactions?page=${page}&size=${PAGE_SIZE}`);
+        const result = await response.json();
+        
+        transactions = result.data || [];
+        transactionsPage = result.page;
+        transactionsHasMore = result.hasMore;
+        transactionsTotalPages = Math.ceil(result.total / PAGE_SIZE);
+        transactionsSearchMode = false;
+        
+        renderTransactionsTable();
+        updateTransactionsPagination();
+    } catch (error) {
+        console.error('Error loading transactions:', error);
+    }
+}
+
+async function searchTransactions() {
+    const searchTerm = document.getElementById('transactionSearchInput').value.trim();
+    if (!searchTerm) {
+        clearTransactionSearch();
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/admin/transactions/search?q=${encodeURIComponent(searchTerm)}`);
+        transactions = await response.json();
+        transactionsSearchMode = true;
+        renderTransactionsTable();
+        
+        // Hide pagination when searching
+        document.getElementById('transactionsPagination').style.display = 'none';
+    } catch (error) {
+        console.error('Error searching transactions:', error);
+    }
+}
+
+function clearTransactionSearch() {
+    document.getElementById('transactionSearchInput').value = '';
+    transactionsSearchMode = false;
+    document.getElementById('transactionsPagination').style.display = 'flex';
+    loadTransactionsPage(0);
+}
+
+function updateTransactionsPagination() {
+    const prevBtn = document.getElementById('transactionsPrevBtn');
+    const nextBtn = document.getElementById('transactionsNextBtn');
+    const pageInfo = document.getElementById('transactionsPageInfo');
+    
+    prevBtn.disabled = transactionsPage === 0;
+    nextBtn.disabled = !transactionsHasMore;
+    pageInfo.textContent = `Page ${transactionsPage + 1} of ${transactionsTotalPages}`;
+    
+    document.getElementById('transactionsPagination').style.display = 'flex';
+}
+
+// ==================== OTHER DATA LOADING ====================
 
 async function loadRooms() {
     try {
@@ -194,16 +320,6 @@ async function loadRooms() {
         renderRoomsTable();
     } catch (error) {
         console.error('Error loading rooms:', error);
-    }
-}
-
-async function loadTransactions() {
-    try {
-        const response = await fetch(`${API_BASE}/admin/transactions`);
-        transactions = await response.json();
-        renderTransactionsTable();
-    } catch (error) {
-        console.error('Error loading transactions:', error);
     }
 }
 
@@ -227,6 +343,8 @@ async function loadPartes() {
     }
 }
 
+// ==================== DAILY REPORT WITH NAVIGATION ====================
+
 async function loadDailyReport() {
     const dateInput = document.getElementById('dailyDateInput').value;
     if (!dateInput) {
@@ -238,8 +356,38 @@ async function loadDailyReport() {
         const response = await fetch(`${API_BASE}/admin/daily?date=${dateInput}`);
         dailyReport = await response.json();
         renderDailyReport();
+        updateDailyNavButtons();
     } catch (error) {
         console.error('Error loading daily report:', error);
+    }
+}
+
+function goToPreviousDay() {
+    const dateInput = document.getElementById('dailyDateInput');
+    const currentDate = new Date(dateInput.value);
+    currentDate.setDate(currentDate.getDate() - 1);
+    dateInput.value = currentDate.toISOString().split('T')[0];
+    loadDailyReport();
+}
+
+function goToNextDay() {
+    const dateInput = document.getElementById('dailyDateInput');
+    const currentDate = new Date(dateInput.value);
+    currentDate.setDate(currentDate.getDate() + 1);
+    dateInput.value = currentDate.toISOString().split('T')[0];
+    loadDailyReport();
+}
+
+function updateDailyNavButtons() {
+    const dateInput = document.getElementById('dailyDateInput').value;
+    const today = new Date().toISOString().split('T')[0];
+    const nextBtn = document.getElementById('dailyNextBtn');
+    
+    // Hide next button if we're at today or future
+    if (dateInput >= today) {
+        nextBtn.style.display = 'none';
+    } else {
+        nextBtn.style.display = 'inline-block';
     }
 }
 
@@ -602,7 +750,7 @@ async function saveGuest(e) {
         
         if (response.ok) {
             closeAllModals();
-            loadGuests();
+            loadGuestsPage(guestsPage);
             alert('Guest updated successfully');
         } else {
             const error = await response.json();
@@ -626,7 +774,7 @@ async function deleteGuest(gid) {
         const response = await fetch(`${API_BASE}/admin/guests/${gid}`, { method: 'DELETE' });
         
         if (response.ok) {
-            loadGuests();
+            loadGuestsPage(guestsPage);
             alert('Guest deleted successfully');
         } else {
             const error = await response.json();
@@ -806,7 +954,7 @@ async function saveTransaction(e) {
         
         if (response.ok) {
             closeAllModals();
-            loadTransactions();
+            loadTransactionsPage(transactionsPage);
             alert('Transaction updated successfully');
         } else {
             const error = await response.json();
@@ -829,7 +977,7 @@ async function deleteTransaction(tid) {
         const response = await fetch(`${API_BASE}/admin/transactions/${tid}`, { method: 'DELETE' });
         
         if (response.ok) {
-            loadTransactions();
+            loadTransactionsPage(transactionsPage);
             alert('Transaction deleted successfully');
         } else {
             const error = await response.json();

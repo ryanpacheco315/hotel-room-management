@@ -28,4 +28,12 @@ public interface GuestRepository extends JpaRepository<Guest, Long> {
     // Search by ID number OR full name containing (case insensitive)
     @Query("SELECT g FROM Guest g WHERE LOWER(g.idNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(g.fullName) LIKE LOWER(CONCAT('%', :search, '%'))")
     List<Guest> searchByIdNumberOrName(@Param("search") String search);
+    
+    // Paginated queries
+    @Query("SELECT g FROM Guest g ORDER BY g.gid DESC")
+    List<Guest> findAllPaginated(org.springframework.data.domain.Pageable pageable);
+    
+    // Count total guests
+    @Query("SELECT COUNT(g) FROM Guest g")
+    long countAllGuests();
 }

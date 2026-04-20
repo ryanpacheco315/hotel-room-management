@@ -92,6 +92,47 @@
     font-size: 14px;
 }
 
+/* Date Navigation Box for Daily Tab */
+.date-nav-box {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.date-nav-box input {
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+/* Pagination Controls */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.pagination-btn {
+    min-width: 140px;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-info {
+    font-size: 14px;
+    color: #666;
+    min-width: 100px;
+    text-align: center;
+}
+
 /* Daily Summary Cards */
 .daily-summary {
     display: flex;

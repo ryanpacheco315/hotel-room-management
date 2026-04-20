@@ -9,12 +9,15 @@ import com.hotelroom.exception.ResourceNotFoundException;
 import com.hotelroom.exception.RoomNotAvailableException;
 import com.hotelroom.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -26,6 +29,35 @@ public class TransactionService {
     private final RoomService roomService;
     private final GuestService guestService;
     private final UserService userService;
+
+
+    /**
+     * Get transactions with pagination
+     */
+    public Map<String, Object> findAllPaginated(int page, int size) {
+        List<Transaction> transactions = transactionRepository.findAllPaginated(PageRequest.of(page, size));
+        long total = transactionRepository.countAllTransactions();
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", toDTOList(transactions));
+        result.put("total", total);
+        result.put("page", page);
+        result.put("size", size);
+        result.put("hasMore", (page + 1) * size < total);
+
+        return result;
+    }
+
+    /**
+     * Search transactions by userName or tid
+     */
+    public List<TransactionDTO> searchTransactions(String searchTerm) {
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+            return toDTOList(findAll());
+        }
+        List<Transaction> transactions = transactionRepository.searchByUserNameOrTid(searchTerm.trim());
+        return toDTOList(transactions);
+    }
 
     public List<Transaction> findAll() {
         return transactionRepository.findAllByOrderByTidDesc();
@@ -70,7 +102,7 @@ public class TransactionService {
         // 2. Get or create guest
         Guest guest;
         Optional<Guest> existingGuest = guestService.findByIdNumber(request.getGuestIdNumber());
-        
+
         if (existingGuest.isPresent()) {
             guest = existingGuest.get();
         } else {
@@ -93,7 +125,7 @@ public class TransactionService {
 
         // 4. Create transaction with price set at check-in
         BigDecimal price = request.getPrice() != null ? request.getPrice() : room.getMoney();
-        
+
         Transaction transaction = Transaction.builder()
                 .room(room)
                 .guest(guest)
@@ -139,7 +171,7 @@ public class TransactionService {
         // 3. Get or create guest
         Guest guest;
         Optional<Guest> existingGuest = guestService.findByIdNumber(request.getGuestIdNumber());
-        
+
         if (existingGuest.isPresent()) {
             guest = existingGuest.get();
         } else {
@@ -169,7 +201,7 @@ public class TransactionService {
                 .total(BigDecimal.ZERO)  // Sub-guest pays $0
                 .parentTransaction(parentTransaction)
                 .build();
-        
+
         return transactionRepository.save(transaction);
     }
 
@@ -222,7 +254,7 @@ public class TransactionService {
     @Transactional
     public void checkOut(Long rid) {
         Room room = roomService.findById(rid);
-        
+
         if (room.getStatus() != Room.RoomStatus.OCCUPIED) {
             throw new RoomNotAvailableException("Room " + room.getName() + " is not occupied");
         }
@@ -235,14 +267,14 @@ public class TransactionService {
     @Transactional
     public Transaction updateTransaction(Long tid, TransactionDTO dto) {
         Transaction transaction = findById(tid);
-        
+
         if (dto.getDate() != null) {
             transaction.setDate(dto.getDate());
         }
         if (dto.getTotal() != null) {
             transaction.setTotal(dto.getTotal());
         }
-        
+
         return transactionRepository.save(transaction);
     }
 
@@ -257,12 +289,12 @@ public class TransactionService {
      */
     public DailyReportDTO getDailyReport(LocalDate date) {
         List<Transaction> transactions = transactionRepository.findByDateOrderByTidDesc(date);
-        
+
         BigDecimal totalIncome = transactions.stream()
                 .map(Transaction::getTotal)
                 .filter(total -> total != null)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
+
         return DailyReportDTO.builder()
                 .date(date)
                 .totalIncome(totalIncome)
@@ -281,7 +313,7 @@ public class TransactionService {
     public TransactionDTO toDTO(Transaction t) {
         Long parentTid = t.getParentTransaction() != null ? t.getParentTransaction().getTid() : null;
         Boolean isSubGuest = parentTid != null && t.getTotal() != null && t.getTotal().compareTo(BigDecimal.ZERO) == 0;
-        
+
         return TransactionDTO.builder()
                 .tid(t.getTid())
                 .date(t.getDate())
@@ -309,12 +341,12 @@ public class TransactionService {
      */
     public PartesDTO toPartesDTO(Transaction t) {
         Guest guest = t.getGuest();
-        
+
         Integer age = null;
         if (guest.getDob() != null) {
             age = Period.between(guest.getDob(), LocalDate.now()).getYears();
         }
-        
+
         return PartesDTO.builder()
                 .roomName(t.getRoom().getName())
                 .fullName(guest.getFullName())

@@ -28,8 +28,10 @@ public class AdminController {
     // ==================== GUESTS ====================
 
     @GetMapping("/guests")
-    public ResponseEntity<List<Guest>> getAllGuests() {
-        return ResponseEntity.ok(guestService.findAll());
+    public ResponseEntity<Map<String, Object>> getAllGuests(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size) {
+        return ResponseEntity.ok(guestService.findAllPaginated(page, size));
     }
 
     @GetMapping("/guests/search")
@@ -106,9 +108,15 @@ public class AdminController {
     // ==================== TRANSACTIONS ====================
 
     @GetMapping("/transactions")
-    public ResponseEntity<List<TransactionDTO>> getAllTransactions() {
-        List<Transaction> transactions = transactionService.findAll();
-        return ResponseEntity.ok(transactionService.toDTOList(transactions));
+    public ResponseEntity<Map<String, Object>> getAllTransactions(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size) {
+        return ResponseEntity.ok(transactionService.findAllPaginated(page, size));
+    }
+
+    @GetMapping("/transactions/search")
+    public ResponseEntity<List<TransactionDTO>> searchTransactions(@RequestParam String q) {
+        return ResponseEntity.ok(transactionService.searchTransactions(q));
     }
 
     @GetMapping("/transactions/{tid}")
