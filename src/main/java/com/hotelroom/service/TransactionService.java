@@ -545,9 +545,31 @@ public class TransactionService {
 
     /**
      * Get transactions for occupied room (main guest and sub-guests)
+     * First checks for today's transactions, if none found, shows the most recent transactions
      */
     public List<Transaction> getTransactionsForOccupiedRoom(Long rid) {
-        return transactionRepository.findByRoomRidAndDate(rid, LocalDate.now());
+        // First try to get today's transactions
+        List<Transaction> todayTransactions = transactionRepository.findByRoomRidAndDate(rid, LocalDate.now());
+        
+        if (!todayTransactions.isEmpty()) {
+            return todayTransactions;
+        }
+        
+        // If no transactions today, get the latest transactions for this room
+        // This happens when it's a new day and the guest hasn't continued their stay yet
+        List<Transaction> latestTransactions = transactionRepository.findLatestByRoomRid(rid);
+        
+        if (latestTransactions.isEmpty()) {
+            return latestTransactions;
+        }
+        
+        // Get the most recent date's transactions
+        LocalDate mostRecentDate = latestTransactions.get(0).getDate().toLocalDate();
+        
+        // Filter to only include transactions from the most recent date
+        return latestTransactions.stream()
+                .filter(t -> t.getDate().toLocalDate().equals(mostRecentDate))
+                .collect(Collectors.toList());
     }
 
     public TransactionDTO toDTO(Transaction t) {

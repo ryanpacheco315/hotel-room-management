@@ -40,6 +40,10 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     @Query("SELECT t FROM Transaction t WHERE t.room.rid = :rid AND t.parentTransaction IS NULL ORDER BY t.date DESC")
     List<Transaction> findOriginalCheckInsByRoom(@Param("rid") Long rid);
 
+    // Find latest transactions for an occupied room (get most recent day's transactions)
+    @Query("SELECT t FROM Transaction t WHERE t.room.rid = :rid ORDER BY t.date DESC")
+    List<Transaction> findLatestByRoomRid(@Param("rid") Long rid);
+
     // Get latest 50 transactions
     @Query("SELECT t FROM Transaction t ORDER BY t.tid DESC LIMIT 50")
     List<Transaction> findTop50ByOrderByTidDesc();

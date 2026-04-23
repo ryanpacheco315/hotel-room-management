@@ -75,7 +75,44 @@ function showAdminPanel() {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('dailyDateInput').value = today;
     
-    // Initialize income report (will load when tab is opened)
+    // Handle manager-specific restrictions
+    if (currentUser.type === 'MANAGER') {
+        // Change title to "Partes" for managers
+        document.getElementById('panelTitle').textContent = '📄 Partes';
+        document.title = 'Partes - Hotel Room Management';
+        
+        // Hide admin-only tabs
+        document.querySelectorAll('.admin-only-tab').forEach(tab => {
+            tab.style.display = 'none';
+        });
+        
+        // Set Partes as the default active tab for managers
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector('.tab-btn[data-tab="partes"]').classList.add('active');
+        
+        // Show only Partes tab content
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.add('hidden');
+        });
+        document.getElementById('partesTab').classList.remove('hidden');
+    } else {
+        // Admin: show all tabs and set Guests as default
+        document.getElementById('panelTitle').textContent = '🛠️ Admin Panel';
+        document.title = 'Admin Panel - Hotel Room Management';
+        
+        document.querySelectorAll('.admin-only-tab').forEach(tab => {
+            tab.style.display = '';
+        });
+        
+        // Set Guests as the default active tab for admin
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector('.tab-btn[data-tab="guests"]').classList.add('active');
+        
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.add('hidden');
+        });
+        document.getElementById('guestsTab').classList.remove('hidden');
+    }
 }
 
 function setupEventListeners() {
@@ -175,6 +212,12 @@ function logout() {
 // ==================== TAB SWITCHING ====================
 
 function switchTab(tabName) {
+    // Prevent managers from accessing admin-only tabs
+    const adminOnlyTabs = ['guests', 'rooms', 'transactions', 'users', 'daily', 'income'];
+    if (currentUser.type === 'MANAGER' && adminOnlyTabs.includes(tabName)) {
+        return; // Don't switch to admin-only tabs for managers
+    }
+    
     // Update tab buttons
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === tabName);
@@ -209,6 +252,13 @@ function switchTab(tabName) {
 // ==================== DATA LOADING ====================
 
 async function loadAllData() {
+    // For managers, only load partes
+    if (currentUser.type === 'MANAGER') {
+        await loadPartes();
+        return;
+    }
+    
+    // For admins, load all data
     await Promise.all([
         loadGuestsPage(0),
         loadRooms(),

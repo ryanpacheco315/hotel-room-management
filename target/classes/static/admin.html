@@ -22,7 +22,7 @@
     <div id="adminPage" class="page hidden">
         <header>
             <div class="header-left">
-                <h1>🛠️ Admin Panel</h1>
+                <h1 id="panelTitle">🛠️ Admin Panel</h1>
             </div>
             <div class="header-right">
                 <span id="currentUser"></span>
@@ -34,13 +34,13 @@
         <main>
             <!-- Tab Navigation -->
             <div class="tab-container">
-                <button class="tab-btn active" data-tab="guests">👥 Guests</button>
-                <button class="tab-btn" data-tab="rooms">🚪 Rooms</button>
-                <button class="tab-btn" data-tab="transactions">💳 Transactions</button>
-                <button class="tab-btn" data-tab="users">👤 Users</button>
+                <button class="tab-btn admin-only-tab" data-tab="guests">👥 Guests</button>
+                <button class="tab-btn admin-only-tab" data-tab="rooms">🚪 Rooms</button>
+                <button class="tab-btn admin-only-tab" data-tab="transactions">💳 Transactions</button>
+                <button class="tab-btn admin-only-tab" data-tab="users">👤 Users</button>
                 <button class="tab-btn" data-tab="partes">📄 Partes</button>
-                <button class="tab-btn" data-tab="daily">📊 Daily</button>
-                <button class="tab-btn" data-tab="income">💰 Income Report</button>
+                <button class="tab-btn admin-only-tab" data-tab="daily">📊 Daily</button>
+                <button class="tab-btn admin-only-tab" data-tab="income">💰 Income Report</button>
             </div>
 
             <!-- Guests Tab -->
