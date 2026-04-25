@@ -5,6 +5,7 @@ const API_URL = '/api';
 let currentUser = null;
 let selectedRoom = null;
 let currentMainTransaction = null;
+let confirmCallback = null;
 
 // DOM Elements
 const loginPage = document.getElementById('loginPage');
@@ -22,6 +23,7 @@ const subGuestModal = document.getElementById('subGuestModal');
 const continueStayModal = document.getElementById('continueStayModal');
 const dirtyModal = document.getElementById('dirtyModal');
 const reservedModal = document.getElementById('reservedModal');
+const confirmModal = document.getElementById('confirmModal');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -89,9 +91,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Reserved room - unreserve
     document.getElementById('unreserveBtn').addEventListener('click', handleUnreserve);
+
+    // Confirm modal buttons
+    document.getElementById('confirmModalYes').addEventListener('click', handleConfirmYes);
+    document.getElementById('confirmModalNo').addEventListener('click', handleConfirmNo);
 });
 
-// Login Handler
+// ==================== MODAL MESSAGE SYSTEM ====================
+
+function showModalMessage(modalId, message, type = 'success') {
+    const messageDiv = document.getElementById(`${modalId}ModalMessage`);
+    if (messageDiv) {
+        messageDiv.innerHTML = `<div class="message-${type}">${message}</div>`;
+        messageDiv.classList.remove('hidden');
+        
+        // Auto-hide after 5 seconds for success messages
+        if (type === 'success') {
+            setTimeout(() => {
+                messageDiv.classList.add('hidden');
+            }, 5000);
+        }
+    }
+}
+
+function hideModalMessage(modalId) {
+    const messageDiv = document.getElementById(`${modalId}ModalMessage`);
+    if (messageDiv) {
+        messageDiv.classList.add('hidden');
+    }
+}
+
+function showConfirm(title, message, callback) {
+    confirmCallback = callback;
+    document.getElementById('confirmModalTitle').textContent = title;
+    document.getElementById('confirmModalMessage').textContent = message;
+    confirmModal.classList.remove('hidden');
+}
+
+function handleConfirmYes() {
+    confirmModal.classList.add('hidden');
+    if (confirmCallback) {
+        confirmCallback(true);
+        confirmCallback = null;
+    }
+}
+
+function handleConfirmNo() {
+    confirmModal.classList.add('hidden');
+    if (confirmCallback) {
+        confirmCallback(false);
+        confirmCallback = null;
+    }
+}
+
+// ==================== LOGIN/LOGOUT ====================
+
 async function handleLogin(e) {
     e.preventDefault();
     const username = document.getElementById('username').value;
@@ -111,15 +165,14 @@ async function handleLogin(e) {
             showDashboard();
         } else {
             const error = await response.json();
-            loginError.textContent = error.error || 'Login failed';
+            loginError.textContent = error.error || 'Error al iniciar sesión';
         }
     } catch (err) {
-        loginError.textContent = 'Connection error. Please try again.';
+        loginError.textContent = 'Error de conexión. Por favor intente de nuevo.';
         console.error(err);
     }
 }
 
-// Logout Handler
 function handleLogout() {
     currentUser = null;
     localStorage.removeItem('currentUser');
@@ -137,7 +190,7 @@ function showLogin() {
 function showDashboard() {
     loginPage.classList.add('hidden');
     dashboardPage.classList.remove('hidden');
-    currentUserSpan.textContent = `Welcome, ${currentUser.fullName} (${currentUser.type})`;
+    currentUserSpan.textContent = `Bienvenido, ${currentUser.fullName} (${currentUser.type})`;
     
     // Show admin panel button for ADMIN and MANAGER
     const adminPanelBtn = document.getElementById('adminPanelBtn');
@@ -158,7 +211,7 @@ async function loadRooms() {
         const rooms = await response.json();
         renderRooms(rooms);
     } catch (err) {
-        console.error('Failed to load rooms:', err);
+        console.error('Error al cargar habitaciones:', err);
     }
 }
 
@@ -181,13 +234,13 @@ function renderRooms(rooms) {
     });
 
     // Create a map for floors 1 and 2 (numeric rooms)
-        const sortedNumericRooms = [...rooms]
-            .filter(r => /^\d+$/.test(r.name) || /^\d+$/.test(r.name))
-            .sort((a, b) => {
-                const numA = parseInt(a.name.replace(/\D/g, ''));
-                const numB = parseInt(b.name.replace(/\D/g, ''));
-                return numA - numB;
-            });
+    const sortedNumericRooms = [...rooms]
+        .filter(r => /^\d+$/.test(r.name) || /^\d+$/.test(r.name))
+        .sort((a, b) => {
+            const numA = parseInt(a.name.replace(/\D/g, ''));
+            const numB = parseInt(b.name.replace(/\D/g, ''));
+            return numA - numB;
+        });
 
     const roomMapNumeric = {};
     sortedNumericRooms.forEach((room, index) => {
@@ -206,12 +259,12 @@ function renderRooms(rooms) {
         [24, 22, 20, null, 18, 16, 14]
     ];
 
-// Floor 3 layout (rooms 301A-304B)
+    // Floor 3 layout (rooms 301A-304B)
     const floor3Layout = [
-            ['303A', '303B', null, null, '302C', '302B'],
-            [null, null, null, null, null, '302A'],
-            ['304A', '304B', null, null, '301B', '301A']
-        ];
+        ['303A', '303B', null, null, '302C', '302B'],
+        [null, null, null, null, null, '302A'],
+        ['304A', '304B', null, null, '301B', '301A']
+    ];
 
     // Floor 4 layout (rooms 401A-404B)
     const floor4Layout = [
@@ -312,12 +365,12 @@ async function loadStats() {
     try {
         const response = await fetch(`${API_URL}/rooms/stats`);
         const stats = await response.json();
-        document.getElementById('statAvailable').textContent = stats.available || 0;
+        document.getElementById('statAvailable').textContent = (stats.available -2) || 0;
         document.getElementById('statOccupied').textContent = stats.occupied || 0;
         document.getElementById('statDirty').textContent = stats.dirty || 0;
         document.getElementById('statReserved').textContent = stats.reserved || 0;
     } catch (err) {
-        console.error('Failed to load stats:', err);
+        console.error('Error al cargar estadísticas:', err);
     }
 }
 
@@ -344,10 +397,11 @@ function handleRoomClick(room) {
 // ==================== AVAILABLE ROOM ====================
 
 function openAvailableModal(room) {
+    hideModalMessage('available');
     document.getElementById('availableRoomInfo').innerHTML = `
-        <p><strong>Room:</strong> ${room.name}</p>
-        <p><strong>Description:</strong> ${room.description || 'N/A'}</p>
-        <p><strong>Default Rate:</strong> $${parseFloat(room.money).toFixed(2)}/night</p>
+        <p><strong>Habitación:</strong> ${room.name}</p>
+        <p><strong>Descripción:</strong> ${room.description || 'N/A'}</p>
+        <p><strong>Tarifa Base:</strong> $${parseFloat(room.money).toFixed(2)}/noche</p>
     `;
     availableModal.classList.remove('hidden');
 }
@@ -356,6 +410,7 @@ function openCheckInModal() {
     availableModal.classList.add('hidden');
     
     // Reset form
+    hideModalMessage('checkIn');
     document.getElementById('searchGuestStep').classList.remove('hidden');
     document.getElementById('newGuestStep').classList.add('hidden');
     document.getElementById('existingGuestStep').classList.add('hidden');
@@ -363,8 +418,8 @@ function openCheckInModal() {
     document.getElementById('searchResult').innerHTML = '';
     
     document.getElementById('roomInfo').innerHTML = `
-        <p><strong>Room:</strong> ${selectedRoom.name}</p>
-        <p><strong>Default Rate:</strong> $${parseFloat(selectedRoom.money).toFixed(2)}/night</p>
+        <p><strong>Habitación:</strong> ${selectedRoom.name}</p>
+        <p><strong>Tarifa Base:</strong> $${parseFloat(selectedRoom.money).toFixed(2)}/noche</p>
     `;
     
     // Set default price
@@ -381,17 +436,19 @@ async function handleReserve() {
         });
 
         if (response.ok) {
-            alert(`Room ${selectedRoom.name} has been reserved.`);
-            closeModals();
-            loadRooms();
-            loadStats();
+            showModalMessage('available', `✅ Habitación ${selectedRoom.name} ha sido reservada.`, 'success');
+            setTimeout(() => {
+                closeModals();
+                loadRooms();
+                loadStats();
+            }, 2000);
         } else {
             const error = await response.json();
-            alert('Reserve failed: ' + (error.error || 'Unknown error'));
+            showModalMessage('available', '❌ Error al reservar: ' + (error.error || 'Error desconocido'), 'error');
         }
     } catch (err) {
-        console.error('Reserve failed:', err);
-        alert('Reserve failed. Please try again.');
+        console.error('Error al reservar:', err);
+        showModalMessage('available', '❌ Error al reservar. Por favor intente de nuevo.', 'error');
     }
 }
 
@@ -400,7 +457,7 @@ async function handleReserve() {
 async function searchGuest() {
     const idNumber = document.getElementById('guestIdSearch').value.trim();
     if (!idNumber) {
-        alert('Please enter an ID number');
+        showModalMessage('checkIn', '⚠️ Por favor ingrese un número de cédula', 'error');
         return;
     }
 
@@ -408,14 +465,15 @@ async function searchGuest() {
         const response = await fetch(`${API_URL}/guests/search?idNumber=${encodeURIComponent(idNumber)}`);
         const result = await response.json();
         
+        hideModalMessage('checkIn');
         if (result.found) {
             showExistingGuest(result.guest);
         } else {
             showNewGuestForm(idNumber);
         }
     } catch (err) {
-        console.error('Search failed:', err);
-        alert('Search failed. Please try again.');
+        console.error('Error en búsqueda:', err);
+        showModalMessage('checkIn', '❌ Error en la búsqueda. Por favor intente de nuevo.', 'error');
     }
 }
 
@@ -426,10 +484,10 @@ function showExistingGuest(guest) {
     
     document.getElementById('existingGuestInfo').innerHTML = `
         <p class="guest-name">${guest.fullName}</p>
-        <p><strong>ID:</strong> ${guest.idNumber}</p>
-        <p><strong>From:</strong> ${guest.state || 'N/A'}, ${guest.country || 'N/A'}</p>
-        <p><strong>DOB:</strong> ${guest.dob || 'N/A'}</p>
-        <p><strong>Occupation:</strong> ${guest.occupation || 'N/A'}</p>
+        <p><strong>Cédula:</strong> ${guest.idNumber}</p>
+        <p><strong>Origen:</strong> ${guest.state || 'N/A'}, ${guest.country || 'N/A'}</p>
+        <p><strong>Fecha de Nac.:</strong> ${guest.dob || 'N/A'}</p>
+        <p><strong>Ocupación:</strong> ${guest.occupation || 'N/A'}</p>
     `;
     
     document.getElementById('existingGuestStep').dataset.guestId = guest.gid;
@@ -477,17 +535,19 @@ async function handleNewGuestCheckIn(e) {
 
         if (response.ok) {
             const transaction = await response.json();
-            alert(`Check-in successful!\nRoom: ${selectedRoom.name}\nGuest: ${checkInData.fullName}\nPrice: $${checkInData.price}`);
-            closeModals();
-            loadRooms();
-            loadStats();
+            showModalMessage('checkIn', `✅ ¡Registro exitoso!<br>Habitación: ${selectedRoom.name}<br>Huésped: ${checkInData.fullName}<br>Precio: $${checkInData.price}`, 'success');
+            setTimeout(() => {
+                closeModals();
+                loadRooms();
+                loadStats();
+            }, 2500);
         } else {
             const error = await response.json();
-            alert('Check-in failed: ' + (error.error || 'Unknown error'));
+            showModalMessage('checkIn', '❌ Error en el registro: ' + (error.error || 'Error desconocido'), 'error');
         }
     } catch (err) {
-        console.error('Check-in failed:', err);
-        alert('Check-in failed. Please try again.');
+        console.error('Error en el registro:', err);
+        showModalMessage('checkIn', '❌ Error en el registro. Por favor intente de nuevo.', 'error');
     }
 }
 
@@ -512,26 +572,29 @@ async function handleExistingGuestCheckIn() {
 
         if (response.ok) {
             const transaction = await response.json();
-            alert(`Check-in successful!\nRoom: ${selectedRoom.name}\nGuest: ${transaction.guestName}\nPrice: $${price}`);
-            closeModals();
-            loadRooms();
-            loadStats();
+            showModalMessage('checkIn', `✅ ¡Registro exitoso!<br>Habitación: ${selectedRoom.name}<br>Huésped: ${transaction.guestName}<br>Precio: $${price}`, 'success');
+            setTimeout(() => {
+                closeModals();
+                loadRooms();
+                loadStats();
+            }, 2500);
         } else {
             const error = await response.json();
-            alert('Check-in failed: ' + (error.error || 'Unknown error'));
+            showModalMessage('checkIn', '❌ Error en el registro: ' + (error.error || 'Error desconocido'), 'error');
         }
     } catch (err) {
-        console.error('Check-in failed:', err);
-        alert('Check-in failed. Please try again.');
+        console.error('Error en el registro:', err);
+        showModalMessage('checkIn', '❌ Error en el registro. Por favor intente de nuevo.', 'error');
     }
 }
 
 // ==================== OCCUPIED ROOM ====================
 
 async function openOccupiedModal(room) {
+    hideModalMessage('occupied');
     document.getElementById('occupiedRoomInfo').innerHTML = `
-        <p><strong>Room:</strong> ${room.name}</p>
-        <p><strong>Status:</strong> <span class="status-badge occupied">OCCUPIED</span></p>
+        <p><strong>Habitación:</strong> ${room.name}</p>
+        <p><strong>Estado:</strong> <span class="status-badge occupied">OCUPADO</span></p>
     `;
     
     // Load today's transactions for this room
@@ -546,57 +609,63 @@ async function openOccupiedModal(room) {
         if (mainTransaction) {
             currentMainTransaction = mainTransaction;
             document.getElementById('occupiedGuestInfo').innerHTML = `
-                <p class="guest-name">Main Guest: ${mainTransaction.guestName}</p>
-                <p><strong>ID:</strong> ${mainTransaction.guestIdNumber}</p>
-                <p><strong>Date:</strong> ${mainTransaction.date}</p>
-                <p><strong>Price:</strong> $${parseFloat(mainTransaction.total).toFixed(2)}</p>
+                <p class="guest-name">Huésped Principal: ${mainTransaction.guestName}</p>
+                <p><strong>Cédula:</strong> ${mainTransaction.guestIdNumber}</p>
+                <p><strong>Fecha:</strong> ${mainTransaction.dateFormatted || mainTransaction.date}</p>
+                <p><strong>Precio:</strong> $${parseFloat(mainTransaction.total).toFixed(2)}</p>
             `;
         } else {
             currentMainTransaction = null;
-            document.getElementById('occupiedGuestInfo').innerHTML = '<p>No guest information available</p>';
+            document.getElementById('occupiedGuestInfo').innerHTML = '<p>No hay información del huésped disponible</p>';
         }
         
         // Show sub-guests
         if (subGuests.length > 0) {
             document.getElementById('subGuestsList').innerHTML = `
-                <h4>Sub-Guests:</h4>
+                <h4>Acompañantes:</h4>
                 ${subGuests.map(sg => `<p>• ${sg.guestName} (${sg.guestIdNumber})</p>`).join('')}
             `;
         } else {
             document.getElementById('subGuestsList').innerHTML = '';
         }
     } catch (err) {
-        console.error('Failed to load transaction:', err);
-        document.getElementById('occupiedGuestInfo').innerHTML = '<p>Failed to load guest information</p>';
+        console.error('Error al cargar transacción:', err);
+        document.getElementById('occupiedGuestInfo').innerHTML = '<p>Error al cargar información del huésped</p>';
         document.getElementById('subGuestsList').innerHTML = '';
     }
     
     occupiedModal.classList.remove('hidden');
 }
 
-async function handleCheckOut() {
-    if (!confirm(`Check out from room ${selectedRoom.name}?`)) {
-        return;
-    }
+function handleCheckOut() {
+    showConfirm(
+        'Confirmar Salida',
+        `¿Realizar salida de la habitación ${selectedRoom.name}?`,
+        async (confirmed) => {
+            if (!confirmed) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/transactions/checkout/${selectedRoom.rid}`, {
+                    method: 'POST'
+                });
 
-    try {
-        const response = await fetch(`${API_URL}/transactions/checkout/${selectedRoom.rid}`, {
-            method: 'POST'
-        });
-
-        if (response.ok) {
-            alert(`Check-out successful!\nRoom ${selectedRoom.name} is now marked as Dirty.`);
-            closeModals();
-            loadRooms();
-            loadStats();
-        } else {
-            const error = await response.json();
-            alert('Check-out failed: ' + (error.error || 'Unknown error'));
+                if (response.ok) {
+                    showModalMessage('occupied', `✅ ¡Salida exitosa!<br>Habitación ${selectedRoom.name} está ahora marcada como Limpiado.`, 'success');
+                    setTimeout(() => {
+                        closeModals();
+                        loadRooms();
+                        loadStats();
+                    }, 2500);
+                } else {
+                    const error = await response.json();
+                    showModalMessage('occupied', '❌ Error en la salida: ' + (error.error || 'Error desconocido'), 'error');
+                }
+            } catch (err) {
+                console.error('Error en la salida:', err);
+                showModalMessage('occupied', '❌ Error en la salida. Por favor intente de nuevo.', 'error');
+            }
         }
-    } catch (err) {
-        console.error('Check-out failed:', err);
-        alert('Check-out failed. Please try again.');
-    }
+    );
 }
 
 // ==================== SUB-GUEST ====================
@@ -605,6 +674,7 @@ function openSubGuestModal() {
     occupiedModal.classList.add('hidden');
     
     // Reset form
+    hideModalMessage('subGuest');
     document.getElementById('searchSubGuestStep').classList.remove('hidden');
     document.getElementById('newSubGuestStep').classList.add('hidden');
     document.getElementById('existingSubGuestStep').classList.add('hidden');
@@ -612,8 +682,8 @@ function openSubGuestModal() {
     document.getElementById('subGuestSearchResult').innerHTML = '';
     
     document.getElementById('subGuestRoomInfo').innerHTML = `
-        <p><strong>Room:</strong> ${selectedRoom.name}</p>
-        <p>Adding sub-guest to this room.</p>
+        <p><strong>Habitación:</strong> ${selectedRoom.name}</p>
+        <p>Agregando acompañante a esta habitación.</p>
     `;
     
     subGuestModal.classList.remove('hidden');
@@ -622,7 +692,7 @@ function openSubGuestModal() {
 async function searchSubGuest() {
     const idNumber = document.getElementById('subGuestIdSearch').value.trim();
     if (!idNumber) {
-        alert('Please enter an ID number');
+        showModalMessage('subGuest', '⚠️ Por favor ingrese un número de cédula', 'error');
         return;
     }
 
@@ -630,14 +700,15 @@ async function searchSubGuest() {
         const response = await fetch(`${API_URL}/guests/search?idNumber=${encodeURIComponent(idNumber)}`);
         const result = await response.json();
         
+        hideModalMessage('subGuest');
         if (result.found) {
             showExistingSubGuest(result.guest);
         } else {
             showNewSubGuestForm(idNumber);
         }
     } catch (err) {
-        console.error('Search failed:', err);
-        alert('Search failed. Please try again.');
+        console.error('Error en búsqueda:', err);
+        showModalMessage('subGuest', '❌ Error en la búsqueda. Por favor intente de nuevo.', 'error');
     }
 }
 
@@ -648,8 +719,8 @@ function showExistingSubGuest(guest) {
     
     document.getElementById('existingSubGuestInfo').innerHTML = `
         <p class="guest-name">${guest.fullName}</p>
-        <p><strong>ID:</strong> ${guest.idNumber}</p>
-        <p><strong>From:</strong> ${guest.state || 'N/A'}, ${guest.country || 'N/A'}</p>
+        <p><strong>Cédula:</strong> ${guest.idNumber}</p>
+        <p><strong>Origen:</strong> ${guest.state || 'N/A'}, ${guest.country || 'N/A'}</p>
     `;
     
     document.getElementById('existingSubGuestStep').dataset.guestIdNumber = guest.idNumber;
@@ -693,16 +764,18 @@ async function handleNewSubGuest(e) {
         });
 
         if (response.ok) {
-            alert(`Sub-guest added successfully!`);
-            closeModals();
-            loadRooms();
+            showModalMessage('subGuest', `✅ ¡Acompañante agregado exitosamente!`, 'success');
+            setTimeout(() => {
+                closeModals();
+                loadRooms();
+            }, 2000);
         } else {
             const error = await response.json();
-            alert('Failed to add sub-guest: ' + (error.error || 'Unknown error'));
+            showModalMessage('subGuest', '❌ Error al agregar acompañante: ' + (error.error || 'Error desconocido'), 'error');
         }
     } catch (err) {
-        console.error('Failed to add sub-guest:', err);
-        alert('Failed to add sub-guest. Please try again.');
+        console.error('Error al agregar acompañante:', err);
+        showModalMessage('subGuest', '❌ Error al agregar acompañante. Por favor intente de nuevo.', 'error');
     }
 }
 
@@ -724,16 +797,18 @@ async function handleExistingSubGuest() {
         });
 
         if (response.ok) {
-            alert(`Sub-guest added successfully!`);
-            closeModals();
-            loadRooms();
+            showModalMessage('subGuest', `✅ ¡Acompañante agregado exitosamente!`, 'success');
+            setTimeout(() => {
+                closeModals();
+                loadRooms();
+            }, 2000);
         } else {
             const error = await response.json();
-            alert('Failed to add sub-guest: ' + (error.error || 'Unknown error'));
+            showModalMessage('subGuest', '❌ Error al agregar acompañante: ' + (error.error || 'Error desconocido'), 'error');
         }
     } catch (err) {
-        console.error('Failed to add sub-guest:', err);
-        alert('Failed to add sub-guest. Please try again.');
+        console.error('Error al agregar acompañante:', err);
+        showModalMessage('subGuest', '❌ Error al agregar acompañante. Por favor intente de nuevo.', 'error');
     }
 }
 
@@ -741,10 +816,11 @@ async function handleExistingSubGuest() {
 
 function openContinueStayModal() {
     occupiedModal.classList.add('hidden');
+    hideModalMessage('continueStay');
     
     document.getElementById('continueStayRoomInfo').innerHTML = `
-        <p><strong>Room:</strong> ${selectedRoom.name}</p>
-        <p><strong>Main Guest:</strong> ${currentMainTransaction ? currentMainTransaction.guestName : 'Unknown'}</p>
+        <p><strong>Habitación:</strong> ${selectedRoom.name}</p>
+        <p><strong>Huésped Principal:</strong> ${currentMainTransaction ? currentMainTransaction.guestName : 'Desconocido'}</p>
     `;
     
     document.getElementById('continueStayPrice').value = selectedRoom.money;
@@ -769,25 +845,28 @@ async function handleContinueStay() {
         });
 
         if (response.ok) {
-            alert(`Stay continued for another day!\nPrice: $${price}`);
-            closeModals();
-            loadRooms();
+            showModalMessage('continueStay', `✅ ¡Estadía continuada por otro día!<br>Precio: $${price}`, 'success');
+            setTimeout(() => {
+                closeModals();
+                loadRooms();
+            }, 2000);
         } else {
             const error = await response.json();
-            alert('Failed to continue stay: ' + (error.error || 'Unknown error'));
+            showModalMessage('continueStay', '❌ Error al continuar estadía: ' + (error.error || 'Error desconocido'), 'error');
         }
     } catch (err) {
-        console.error('Failed to continue stay:', err);
-        alert('Failed to continue stay. Please try again.');
+        console.error('Error al continuar estadía:', err);
+        showModalMessage('continueStay', '❌ Error al continuar estadía. Por favor intente de nuevo.', 'error');
     }
 }
 
 // ==================== DIRTY ROOM ====================
 
 function openDirtyModal(room) {
+    hideModalMessage('dirty');
     document.getElementById('dirtyRoomInfo').innerHTML = `
-        <p><strong>Room:</strong> ${room.name}</p>
-        <p><strong>Status:</strong> <span class="status-badge dirty">DIRTY</span></p>
+        <p><strong>Habitación:</strong> ${room.name}</p>
+        <p><strong>Estado:</strong> <span class="status-badge dirty">LIMPIANDO</span></p>
     `;
     dirtyModal.classList.remove('hidden');
 }
@@ -799,26 +878,29 @@ async function handleMarkClean() {
         });
 
         if (response.ok) {
-            alert(`Room ${selectedRoom.name} is now available.`);
-            closeModals();
-            loadRooms();
-            loadStats();
+            showModalMessage('dirty', `✅ Habitación ${selectedRoom.name} está ahora disponible.`, 'success');
+            setTimeout(() => {
+                closeModals();
+                loadRooms();
+                loadStats();
+            }, 2000);
         } else {
             const error = await response.json();
-            alert('Failed to mark clean: ' + (error.error || 'Unknown error'));
+            showModalMessage('dirty', '❌ Error al marcar limpia: ' + (error.error || 'Error desconocido'), 'error');
         }
     } catch (err) {
-        console.error('Failed to mark clean:', err);
-        alert('Failed to mark clean. Please try again.');
+        console.error('Error al marcar limpia:', err);
+        showModalMessage('dirty', '❌ Error al marcar limpia. Por favor intente de nuevo.', 'error');
     }
 }
 
 // ==================== RESERVED ROOM ====================
 
 function openReservedModal(room) {
+    hideModalMessage('reserved');
     document.getElementById('reservedRoomInfo').innerHTML = `
-        <p><strong>Room:</strong> ${room.name}</p>
-        <p><strong>Status:</strong> <span class="status-badge reserved">RESERVED</span></p>
+        <p><strong>Habitación:</strong> ${room.name}</p>
+        <p><strong>Estado:</strong> <span class="status-badge reserved">RESERVADO</span></p>
     `;
     reservedModal.classList.remove('hidden');
 }
@@ -830,17 +912,19 @@ async function handleUnreserve() {
         });
 
         if (response.ok) {
-            alert(`Room ${selectedRoom.name} is now available.`);
-            closeModals();
-            loadRooms();
-            loadStats();
+            showModalMessage('reserved', `✅ Habitación ${selectedRoom.name} está ahora disponible.`, 'success');
+            setTimeout(() => {
+                closeModals();
+                loadRooms();
+                loadStats();
+            }, 2000);
         } else {
             const error = await response.json();
-            alert('Failed to unreserve: ' + (error.error || 'Unknown error'));
+            showModalMessage('reserved', '❌ Error al liberar reserva: ' + (error.error || 'Error desconocido'), 'error');
         }
     } catch (err) {
-        console.error('Failed to unreserve:', err);
-        alert('Failed to unreserve. Please try again.');
+        console.error('Error al liberar reserva:', err);
+        showModalMessage('reserved', '❌ Error al liberar reserva. Por favor intente de nuevo.', 'error');
     }
 }
 
@@ -854,6 +938,16 @@ function closeModals() {
     continueStayModal.classList.add('hidden');
     dirtyModal.classList.add('hidden');
     reservedModal.classList.add('hidden');
+    confirmModal.classList.add('hidden');
     selectedRoom = null;
     currentMainTransaction = null;
+    
+    // Hide all messages
+    hideModalMessage('available');
+    hideModalMessage('checkIn');
+    hideModalMessage('occupied');
+    hideModalMessage('subGuest');
+    hideModalMessage('continueStay');
+    hideModalMessage('dirty');
+    hideModalMessage('reserved');
 }

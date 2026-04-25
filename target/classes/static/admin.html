@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Hotel Room Management</title>
+    <title>Panel de Administración - Hostal Malibu</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/admin.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -12,9 +12,9 @@
     <!-- Login Required Check -->
     <div id="accessDenied" class="page hidden">
         <div class="login-container">
-            <h1>🚫 Access Denied</h1>
-            <p>You must be logged in as an Admin or Manager to access this page.</p>
-            <a href="index.html" class="btn btn-primary">Go to Login</a>
+            <h1>🚫 Acceso Denegado</h1>
+            <p>Debe iniciar sesión como Administrador o Gerente para acceder a esta página.</p>
+            <a href="index.html" class="btn btn-primary">Ir a Inicio</a>
         </div>
     </div>
 
@@ -22,35 +22,36 @@
     <div id="adminPage" class="page hidden">
         <header>
             <div class="header-left">
-                <h1 id="panelTitle">🛠️ Admin Panel</h1>
+                <img src="images/logo.png" alt="Hostal Malibu" class="header-logo">
+                <h1 id="panelTitle">Panel de Administración</h1>
             </div>
             <div class="header-right">
                 <span id="currentUser"></span>
-                <a href="index.html" class="btn btn-secondary">Back to Dashboard</a>
-                <button id="logoutBtn" class="btn btn-secondary">Logout</button>
+                <a href="index.html" class="btn btn-secondary">Volver al Panel</a>
+                <button id="logoutBtn" class="btn btn-secondary">Cerrar Sesión</button>
             </div>
         </header>
 
         <main>
             <!-- Tab Navigation -->
             <div class="tab-container">
-                <button class="tab-btn admin-only-tab" data-tab="guests">👥 Guests</button>
-                <button class="tab-btn admin-only-tab" data-tab="rooms">🚪 Rooms</button>
-                <button class="tab-btn admin-only-tab" data-tab="transactions">💳 Transactions</button>
-                <button class="tab-btn admin-only-tab" data-tab="users">👤 Users</button>
+                <button class="tab-btn admin-only-tab" data-tab="guests">👥 Huéspedes</button>
+                <button class="tab-btn admin-only-tab" data-tab="rooms">🚪 Habitaciones</button>
+                <button class="tab-btn admin-only-tab" data-tab="transactions">💳 Transacciones</button>
+                <button class="tab-btn admin-only-tab" data-tab="users">👤 Usuarios</button>
                 <button class="tab-btn" data-tab="partes">📄 Partes</button>
-                <button class="tab-btn admin-only-tab" data-tab="daily">📊 Daily</button>
-                <button class="tab-btn admin-only-tab" data-tab="income">💰 Income Report</button>
+                <button class="tab-btn admin-only-tab" data-tab="daily">📊 Diario</button>
+                <button class="tab-btn admin-only-tab" data-tab="income">💰 Reporte de Ingresos</button>
             </div>
 
             <!-- Guests Tab -->
             <div id="guestsTab" class="tab-content active">
                 <div class="table-header">
-                    <h2>Guest Management</h2>
+                    <h2>Gestión de Huéspedes</h2>
                     <div class="search-box">
-                        <input type="text" id="guestSearchInput" placeholder="Search by ID or Name...">
-                        <button id="guestSearchBtn" class="btn btn-primary">Search</button>
-                        <button id="guestClearBtn" class="btn btn-secondary">Clear</button>
+                        <input type="text" id="guestSearchInput" placeholder="Buscar por Cédula o Nombre...">
+                        <button id="guestSearchBtn" class="btn btn-primary">Buscar</button>
+                        <button id="guestClearBtn" class="btn btn-secondary">Limpiar</button>
                     </div>
                 </div>
                 <div class="table-container">
@@ -58,39 +59,39 @@
                         <thead>
                             <tr>
                                 <th data-sort="gid">ID ↕</th>
-                                <th data-sort="idNumber">ID Number ↕</th>
-                                <th data-sort="fullName">Full Name ↕</th>
-                                <th data-sort="state">State ↕</th>
-                                <th data-sort="country">Country ↕</th>
-                                <th data-sort="occupation">Occupation ↕</th>
-                                <th>Actions</th>
+                                <th data-sort="idNumber">Cédula ↕</th>
+                                <th data-sort="fullName">Nombre Completo ↕</th>
+                                <th data-sort="state">Estado ↕</th>
+                                <th data-sort="country">País ↕</th>
+                                <th data-sort="occupation">Ocupación ↕</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
                     </table>
                 </div>
                 <div class="pagination-controls" id="guestsPagination">
-                    <button id="guestsPrevBtn" class="btn btn-secondary pagination-btn" disabled>← Previous 100</button>
-                    <span id="guestsPageInfo" class="page-info">Page 1</span>
-                    <button id="guestsNextBtn" class="btn btn-secondary pagination-btn">Next 100 →</button>
+                    <button id="guestsPrevBtn" class="btn btn-secondary pagination-btn" disabled>← Anterior 100</button>
+                    <span id="guestsPageInfo" class="page-info">Página 1</span>
+                    <button id="guestsNextBtn" class="btn btn-secondary pagination-btn">Siguiente 100 →</button>
                 </div>
             </div>
 
             <!-- Rooms Tab -->
             <div id="roomsTab" class="tab-content hidden">
                 <div class="table-header">
-                    <h2>Room Management</h2>
+                    <h2>Gestión de Habitaciones</h2>
                 </div>
                 <div class="table-container">
                     <table id="roomsTable">
                         <thead>
                             <tr>
                                 <th data-sort="rid">ID ↕</th>
-                                <th data-sort="name">Room Name ↕</th>
-                                <th data-sort="description">Description ↕</th>
-                                <th data-sort="status">Status ↕</th>
-                                <th data-sort="money">Rate ↕</th>
-                                <th>Actions</th>
+                                <th data-sort="name">Habitación ↕</th>
+                                <th data-sort="description">Descripción ↕</th>
+                                <th data-sort="status">Estado ↕</th>
+                                <th data-sort="money">Tarifa ↕</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -101,11 +102,11 @@
             <!-- Transactions Tab -->
             <div id="transactionsTab" class="tab-content hidden">
                 <div class="table-header">
-                    <h2>Transaction Management</h2>
+                    <h2>Gestión de Transacciones</h2>
                     <div class="search-box">
-                        <input type="text" id="transactionSearchInput" placeholder="Search by TID or Guest Name...">
-                        <button id="transactionSearchBtn" class="btn btn-primary">Search</button>
-                        <button id="transactionClearBtn" class="btn btn-secondary">Clear</button>
+                        <input type="text" id="transactionSearchInput" placeholder="Buscar por TID o Nombre del Huésped...">
+                        <button id="transactionSearchBtn" class="btn btn-primary">Buscar</button>
+                        <button id="transactionClearBtn" class="btn btn-secondary">Limpiar</button>
                     </div>
                 </div>
                 <div class="table-container">
@@ -113,42 +114,42 @@
                         <thead>
                             <tr>
                                 <th data-sort="tid">ID ↕</th>
-                                <th data-sort="date">Date ↕</th>
-                                <th data-sort="roomName">Room ↕</th>
-                                <th data-sort="guestName">Guest ↕</th>
-                                <th data-sort="userName">Employee ↕</th>
+                                <th data-sort="date">Fecha ↕</th>
+                                <th data-sort="roomName">Habitación ↕</th>
+                                <th data-sort="guestName">Huésped ↕</th>
+                                <th data-sort="userName">Empleado ↕</th>
                                 <th data-sort="total">Total ↕</th>
-                                <th data-sort="parentTid">Parent ID ↕</th>
-                                <th>Actions</th>
+                                <th data-sort="parentTid">ID Padre ↕</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
                     </table>
                 </div>
                 <div class="pagination-controls" id="transactionsPagination">
-                    <button id="transactionsPrevBtn" class="btn btn-secondary pagination-btn" disabled>← Previous 100</button>
-                    <span id="transactionsPageInfo" class="page-info">Page 1</span>
-                    <button id="transactionsNextBtn" class="btn btn-secondary pagination-btn">Next 100 →</button>
+                    <button id="transactionsPrevBtn" class="btn btn-secondary pagination-btn" disabled>← Anterior 100</button>
+                    <span id="transactionsPageInfo" class="page-info">Página 1</span>
+                    <button id="transactionsNextBtn" class="btn btn-secondary pagination-btn">Siguiente 100 →</button>
                 </div>
             </div>
 
             <!-- Users Tab -->
             <div id="usersTab" class="tab-content hidden">
                 <div class="table-header">
-                    <h2>User Management</h2>
-                    <button id="addUserBtn" class="btn btn-success admin-only">+ Add User</button>
+                    <h2>Gestión de Usuarios</h2>
+                    <button id="addUserBtn" class="btn btn-success admin-only">+ Agregar Usuario</button>
                 </div>
                 <div class="table-container">
                     <table id="usersTable">
                         <thead>
                             <tr>
                                 <th data-sort="uid">ID ↕</th>
-                                <th data-sort="username">Username ↕</th>
-                                <th data-sort="fullName">Full Name ↕</th>
-                                <th data-sort="type">Role ↕</th>
-                                <th data-sort="startDate">Start Date ↕</th>
-                                <th data-sort="active">Status ↕</th>
-                                <th>Actions</th>
+                                <th data-sort="username">Usuario ↕</th>
+                                <th data-sort="fullName">Nombre Completo ↕</th>
+                                <th data-sort="type">Rol ↕</th>
+                                <th data-sort="startDate">Fecha de Inicio ↕</th>
+                                <th data-sort="active">Estado ↕</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -159,21 +160,21 @@
             <!-- Partes Tab -->
             <div id="partesTab" class="tab-content hidden">
                 <div class="table-header">
-                    <h2>Partes (Latest 50 Transactions)</h2>
+                    <h2>Partes (Últimas 50 Transacciones)</h2>
                 </div>
                 <div class="table-container">
                     <table id="partesTable">
                         <thead>
                             <tr>
-                                <th data-sort="roomName">Room ↕</th>
-                                <th data-sort="fullName">Full Name ↕</th>
-                                <th data-sort="country">Country ↕</th>
-                                <th data-sort="age">Age ↕</th>
-                                <th data-sort="marriageStatus">Marriage Status ↕</th>
-                                <th data-sort="occupation">Occupation ↕</th>
-                                <th data-sort="idNumber">ID Number ↕</th>
-                                <th data-sort="state">State ↕</th>
-                                <th data-sort="date">Date ↕</th>
+                                <th data-sort="roomName">Habitación ↕</th>
+                                <th data-sort="fullName">Nombre Completo ↕</th>
+                                <th data-sort="country">País ↕</th>
+                                <th data-sort="age">Edad ↕</th>
+                                <th data-sort="marriageStatus">Estado Civil ↕</th>
+                                <th data-sort="occupation">Ocupación ↕</th>
+                                <th data-sort="idNumber">Cédula ↕</th>
+                                <th data-sort="state">Estado ↕</th>
+                                <th data-sort="date">Fecha ↕</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -181,28 +182,28 @@
                 </div>
             </div>
 
-            <!-- Daily Tab -->
+            <!-- Daily Report Tab -->
             <div id="dailyTab" class="tab-content hidden">
                 <div class="table-header">
-                    <h2>Daily Transactions</h2>
+                    <h2>Reporte Diario</h2>
                     <div class="date-nav-box">
-                        <button id="dailyPrevBtn" class="btn btn-secondary">← Previous Day</button>
+                        <button id="dailyPrevBtn" class="btn btn-secondary">← Anterior</button>
                         <input type="date" id="dailyDateInput">
-                        <button id="loadDailyBtn" class="btn btn-primary">Load</button>
-                        <button id="dailyNextBtn" class="btn btn-secondary">Next Day →</button>
+                        <button id="loadDailyBtn" class="btn btn-primary">Cargar</button>
+                        <button id="dailyNextBtn" class="btn btn-secondary">Siguiente →</button>
                     </div>
                 </div>
                 <div class="daily-summary">
                     <div class="summary-card">
-                        <span class="summary-label">Date:</span>
+                        <span class="summary-label">Fecha:</span>
                         <span id="dailyReportDate" class="summary-value">-</span>
                     </div>
                     <div class="summary-card total-income">
-                        <span class="summary-label">Total Income:</span>
+                        <span class="summary-label">Ingreso Total:</span>
                         <span id="dailyTotalIncome" class="summary-value">$0.00</span>
                     </div>
                     <div class="summary-card">
-                        <span class="summary-label">Transactions:</span>
+                        <span class="summary-label">Transacciones:</span>
                         <span id="dailyTransactionCount" class="summary-value">0</span>
                     </div>
                 </div>
@@ -210,13 +211,11 @@
                     <table id="dailyTable">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Room</th>
-                                <th>Guest</th>
-                                <th>Guest ID</th>
-                                <th>Employee</th>
+                                <th>TID</th>
+                                <th>Habitación</th>
+                                <th>Huésped</th>
                                 <th>Total</th>
-                                <th>Type</th>
+                                <th>Tipo</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -228,33 +227,33 @@
             <div id="incomeTab" class="tab-content hidden">
                 <!-- Sub-tabs for Week/Month/Year -->
                 <div class="income-sub-tabs">
-                    <button class="income-sub-btn active" data-income-tab="week">📅 Week</button>
-                    <button class="income-sub-btn" data-income-tab="month">📆 Month</button>
-                    <button class="income-sub-btn" data-income-tab="year">📊 Year</button>
+                    <button class="income-sub-btn active" data-income-tab="week">📅 Semana</button>
+                    <button class="income-sub-btn" data-income-tab="month">📆 Mes</button>
+                    <button class="income-sub-btn" data-income-tab="year">📊 Año</button>
                 </div>
 
                 <!-- Week Sub-Tab -->
                 <div id="weekSubTab" class="income-sub-content">
                     <div class="quick-select-section">
-                        <h3>Quick Select Week</h3>
+                        <h3>Seleccionar Semana</h3>
                         <div id="weekQuickButtons" class="quick-buttons"></div>
                         <div class="week-picker">
-                            <label>Or select a Monday:</label>
+                            <label>O seleccione un Lunes:</label>
                             <input type="date" id="weekPickerInput">
-                            <button id="loadWeekBtn" class="btn btn-primary">Load Week</button>
+                            <button id="loadWeekBtn" class="btn btn-primary">Cargar Semana</button>
                         </div>
                     </div>
                     <div class="income-summary">
                         <div class="summary-card">
-                            <span class="summary-label">Week Period:</span>
+                            <span class="summary-label">Período:</span>
                             <span id="weekReportPeriod" class="summary-value">-</span>
                         </div>
                         <div class="summary-card total-income">
-                            <span class="summary-label">Total Income:</span>
+                            <span class="summary-label">Ingreso Total:</span>
                             <span id="weekTotalAmount" class="summary-value">$0.00</span>
                         </div>
                         <div class="summary-card">
-                            <span class="summary-label">Transactions:</span>
+                            <span class="summary-label">Transacciones:</span>
                             <span id="weekTransactionCount" class="summary-value">0</span>
                         </div>
                     </div>
@@ -263,19 +262,19 @@
                     </div>
                     <div class="report-tables">
                         <div class="table-section">
-                            <h4>Daily Breakdown</h4>
+                            <h4>Desglose Diario</h4>
                             <table id="weekBreakdownTable">
                                 <thead>
-                                    <tr><th>Day</th><th>Date</th><th>Income</th><th>Transactions</th></tr>
+                                    <tr><th>Día</th><th>Fecha</th><th>Ingreso</th><th>Transacciones</th></tr>
                                 </thead>
                                 <tbody></tbody>
                             </table>
                         </div>
                         <div class="table-section">
-                            <h4>Room Occupancy Frequency (Paid Only)</h4>
+                            <h4>Frecuencia de Ocupación (Solo Pagados)</h4>
                             <table id="weekRoomFreqTable">
                                 <thead>
-                                    <tr><th>Room</th><th>Times Occupied</th></tr>
+                                    <tr><th>Habitación</th><th>Veces Ocupada</th></tr>
                                 </thead>
                                 <tbody></tbody>
                             </table>
@@ -286,39 +285,39 @@
                 <!-- Month Sub-Tab -->
                 <div id="monthSubTab" class="income-sub-content hidden">
                     <div class="quick-select-section">
-                        <h3>Quick Select Month</h3>
+                        <h3>Seleccionar Mes</h3>
                         <div id="monthQuickButtons" class="quick-buttons"></div>
                         <div class="month-picker">
-                            <label>Or select month:</label>
+                            <label>O seleccione mes:</label>
                             <select id="monthPickerMonth">
-                                <option value="1">January</option>
-                                <option value="2">February</option>
-                                <option value="3">March</option>
-                                <option value="4">April</option>
-                                <option value="5">May</option>
-                                <option value="6">June</option>
-                                <option value="7">July</option>
-                                <option value="8">August</option>
-                                <option value="9">September</option>
-                                <option value="10">October</option>
-                                <option value="11">November</option>
-                                <option value="12">December</option>
+                                <option value="1">Enero</option>
+                                <option value="2">Febrero</option>
+                                <option value="3">Marzo</option>
+                                <option value="4">Abril</option>
+                                <option value="5">Mayo</option>
+                                <option value="6">Junio</option>
+                                <option value="7">Julio</option>
+                                <option value="8">Agosto</option>
+                                <option value="9">Septiembre</option>
+                                <option value="10">Octubre</option>
+                                <option value="11">Noviembre</option>
+                                <option value="12">Diciembre</option>
                             </select>
                             <select id="monthPickerYear"></select>
-                            <button id="loadMonthBtn" class="btn btn-primary">Load Month</button>
+                            <button id="loadMonthBtn" class="btn btn-primary">Cargar Mes</button>
                         </div>
                     </div>
                     <div class="income-summary">
                         <div class="summary-card">
-                            <span class="summary-label">Month:</span>
+                            <span class="summary-label">Mes:</span>
                             <span id="monthReportPeriod" class="summary-value">-</span>
                         </div>
                         <div class="summary-card total-income">
-                            <span class="summary-label">Total Income:</span>
+                            <span class="summary-label">Ingreso Total:</span>
                             <span id="monthTotalAmount" class="summary-value">$0.00</span>
                         </div>
                         <div class="summary-card">
-                            <span class="summary-label">Transactions:</span>
+                            <span class="summary-label">Transacciones:</span>
                             <span id="monthTransactionCount" class="summary-value">0</span>
                         </div>
                     </div>
@@ -327,19 +326,19 @@
                     </div>
                     <div class="report-tables">
                         <div class="table-section">
-                            <h4>Weekly Breakdown</h4>
+                            <h4>Desglose Semanal</h4>
                             <table id="monthBreakdownTable">
                                 <thead>
-                                    <tr><th>Week</th><th>Period</th><th>Income</th><th>Transactions</th></tr>
+                                    <tr><th>Semana</th><th>Período</th><th>Ingreso</th><th>Transacciones</th></tr>
                                 </thead>
                                 <tbody></tbody>
                             </table>
                         </div>
                         <div class="table-section">
-                            <h4>Room Occupancy Frequency (Paid Only)</h4>
+                            <h4>Frecuencia de Ocupación (Solo Pagados)</h4>
                             <table id="monthRoomFreqTable">
                                 <thead>
-                                    <tr><th>Room</th><th>Times Occupied</th></tr>
+                                    <tr><th>Habitación</th><th>Veces Ocupada</th></tr>
                                 </thead>
                                 <tbody></tbody>
                             </table>
@@ -350,20 +349,20 @@
                 <!-- Year Sub-Tab -->
                 <div id="yearSubTab" class="income-sub-content hidden">
                     <div class="quick-select-section">
-                        <h3>Select Year</h3>
+                        <h3>Seleccionar Año</h3>
                         <div id="yearQuickButtons" class="quick-buttons"></div>
                     </div>
                     <div class="income-summary">
                         <div class="summary-card">
-                            <span class="summary-label">Year:</span>
+                            <span class="summary-label">Año:</span>
                             <span id="yearReportPeriod" class="summary-value">-</span>
                         </div>
                         <div class="summary-card total-income">
-                            <span class="summary-label">Total Income:</span>
+                            <span class="summary-label">Ingreso Total:</span>
                             <span id="yearTotalAmount" class="summary-value">$0.00</span>
                         </div>
                         <div class="summary-card">
-                            <span class="summary-label">Transactions:</span>
+                            <span class="summary-label">Transacciones:</span>
                             <span id="yearTransactionCount" class="summary-value">0</span>
                         </div>
                     </div>
@@ -372,19 +371,19 @@
                     </div>
                     <div class="report-tables">
                         <div class="table-section">
-                            <h4>Monthly Breakdown</h4>
+                            <h4>Desglose Mensual</h4>
                             <table id="yearBreakdownTable">
                                 <thead>
-                                    <tr><th>Month</th><th>Income</th><th>Transactions</th></tr>
+                                    <tr><th>Mes</th><th>Ingreso</th><th>Transacciones</th></tr>
                                 </thead>
                                 <tbody></tbody>
                             </table>
                         </div>
                         <div class="table-section">
-                            <h4>Room Occupancy Frequency (Paid Only)</h4>
+                            <h4>Frecuencia de Ocupación (Solo Pagados)</h4>
                             <table id="yearRoomFreqTable">
                                 <thead>
-                                    <tr><th>Room</th><th>Times Occupied</th></tr>
+                                    <tr><th>Habitación</th><th>Veces Ocupada</th></tr>
                                 </thead>
                                 <tbody></tbody>
                             </table>
@@ -395,71 +394,60 @@
         </main>
     </div>
 
-    <!-- View Guest Modal -->
-    <div id="viewGuestModal" class="modal hidden">
-        <div class="modal-content modal-large">
-            <span class="close-btn">&times;</span>
-            <h2>Guest Details</h2>
-            <div id="guestDetails" class="detail-section"></div>
-            <h3>Transaction History</h3>
-            <div id="guestTransactions" class="transaction-list"></div>
-        </div>
-    </div>
-
     <!-- Edit Guest Modal -->
     <div id="editGuestModal" class="modal hidden">
         <div class="modal-content">
             <span class="close-btn">&times;</span>
-            <h2>Edit Guest</h2>
+            <h2>Editar Huésped</h2>
             <form id="editGuestForm">
                 <input type="hidden" id="editGuestId">
                 <div class="form-row">
                     <div class="form-group">
-                        <label>ID Number</label>
+                        <label>Cédula</label>
                         <input type="text" id="editGuestIdNumber" readonly>
                     </div>
                     <div class="form-group">
-                        <label>Full Name *</label>
+                        <label>Nombre Completo *</label>
                         <input type="text" id="editGuestFullName" required>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>State</label>
+                        <label>Estado/Provincia</label>
                         <input type="text" id="editGuestState">
                     </div>
                     <div class="form-group">
-                        <label>Country</label>
+                        <label>País</label>
                         <input type="text" id="editGuestCountry">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Date of Birth</label>
+                        <label>Fecha de Nacimiento</label>
                         <input type="date" id="editGuestDob">
                     </div>
                     <div class="form-group">
-                        <label>Marriage Status</label>
+                        <label>Estado Civil</label>
                         <select id="editGuestMarriage">
-                            <option value="">Select...</option>
-                            <option value="Single">Single</option>
-                            <option value="Married">Married</option>
-                            <option value="Divorced">Divorced</option>
-                            <option value="Widowed">Widowed</option>
+                            <option value="">Seleccionar...</option>
+                            <option value="SOLTERO">SOLTERO</option>
+                            <option value="CASADO">CASADO</option>
+                            <option value="DIVORCIADO">DIVORCIADO</option>
+                            <option value="VIUDO">VIUDO</option>
                         </select>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Occupation</label>
+                    <label>Ocupación</label>
                     <input type="text" id="editGuestOccupation">
                 </div>
                 <div class="form-group">
-                    <label>Description/Notes</label>
+                    <label>Descripción/Notas</label>
                     <textarea id="editGuestDescription" rows="3"></textarea>
                 </div>
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-success">Save Changes</button>
-                    <button type="button" class="btn btn-secondary close-modal-btn">Cancel</button>
+                    <button type="submit" class="btn btn-success">Guardar Cambios</button>
+                    <button type="button" class="btn btn-secondary close-modal-btn">Cancelar</button>
                 </div>
             </form>
         </div>
@@ -469,24 +457,24 @@
     <div id="editRoomModal" class="modal hidden">
         <div class="modal-content">
             <span class="close-btn">&times;</span>
-            <h2>Edit Room</h2>
+            <h2>Editar Habitación</h2>
             <form id="editRoomForm">
                 <input type="hidden" id="editRoomId">
                 <div class="form-group">
-                    <label>Room Name *</label>
+                    <label>Nombre de Habitación *</label>
                     <input type="text" id="editRoomName" required>
                 </div>
                 <div class="form-group">
-                    <label>Description</label>
+                    <label>Descripción</label>
                     <input type="text" id="editRoomDescription">
                 </div>
                 <div class="form-group">
-                    <label>Rate per Night ($) *</label>
+                    <label>Tarifa por Noche ($) *</label>
                     <input type="number" id="editRoomMoney" step="0.01" min="0" required>
                 </div>
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-success">Save Changes</button>
-                    <button type="button" class="btn btn-secondary close-modal-btn">Cancel</button>
+                    <button type="submit" class="btn btn-success">Guardar Cambios</button>
+                    <button type="button" class="btn btn-secondary close-modal-btn">Cancelar</button>
                 </div>
             </form>
         </div>
@@ -496,22 +484,22 @@
     <div id="editTransactionModal" class="modal hidden">
         <div class="modal-content">
             <span class="close-btn">&times;</span>
-            <h2>Edit Transaction</h2>
+            <h2>Editar Transacción</h2>
             <form id="editTransactionForm">
                 <input type="hidden" id="editTransactionId">
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Room</label>
+                        <label>Habitación</label>
                         <input type="text" id="editTransactionRoom" readonly>
                     </div>
                     <div class="form-group">
-                        <label>Guest</label>
+                        <label>Huésped</label>
                         <input type="text" id="editTransactionGuest" readonly>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Date</label>
+                        <label>Fecha</label>
                         <input type="date" id="editTransactionDate">
                     </div>
                     <div class="form-group">
@@ -520,8 +508,8 @@
                     </div>
                 </div>
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-success">Save Changes</button>
-                    <button type="button" class="btn btn-secondary close-modal-btn">Cancel</button>
+                    <button type="submit" class="btn btn-success">Guardar Cambios</button>
+                    <button type="button" class="btn btn-secondary close-modal-btn">Cancelar</button>
                 </div>
             </form>
         </div>
@@ -531,33 +519,33 @@
     <div id="editUserModal" class="modal hidden">
         <div class="modal-content">
             <span class="close-btn">&times;</span>
-            <h2 id="userModalTitle">Edit User</h2>
+            <h2 id="userModalTitle">Editar Usuario</h2>
             <form id="editUserForm">
                 <input type="hidden" id="editUserId">
                 <div class="form-group">
-                    <label>Username *</label>
+                    <label>Nombre de Usuario *</label>
                     <input type="text" id="editUserUsername" required>
                 </div>
                 <div class="form-group" id="passwordGroup">
-                    <label>Password *</label>
+                    <label>Contraseña *</label>
                     <input type="password" id="editUserPassword">
-                    <small>Leave blank to keep current password (edit mode only)</small>
+                    <small>Dejar en blanco para mantener contraseña actual (solo edición)</small>
                 </div>
                 <div class="form-group">
-                    <label>Full Name *</label>
+                    <label>Nombre Completo *</label>
                     <input type="text" id="editUserFullName" required>
                 </div>
                 <div class="form-group">
-                    <label>Role *</label>
+                    <label>Rol *</label>
                     <select id="editUserType" required>
-                        <option value="RECEPTIONIST">Receptionist</option>
-                        <option value="MANAGER">Manager</option>
-                        <option value="ADMIN">Admin</option>
+                        <option value="RECEPTIONIST">Recepcionista</option>
+                        <option value="MANAGER">Gerente</option>
+                        <option value="ADMIN">Administrador</option>
                     </select>
                 </div>
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-success">Save</button>
-                    <button type="button" class="btn btn-secondary close-modal-btn">Cancel</button>
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                    <button type="button" class="btn btn-secondary close-modal-btn">Cancelar</button>
                 </div>
             </form>
         </div>
@@ -566,11 +554,11 @@
     <!-- Confirm Delete Modal -->
     <div id="confirmDeleteModal" class="modal hidden">
         <div class="modal-content modal-small">
-            <h2>Confirm Delete</h2>
-            <p id="deleteMessage">Are you sure you want to delete this item?</p>
+            <h2>Confirmar Eliminación</h2>
+            <p id="deleteMessage">¿Está seguro que desea eliminar este elemento?</p>
             <div class="form-actions">
-                <button id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
-                <button class="btn btn-secondary close-modal-btn">Cancel</button>
+                <button id="confirmDeleteBtn" class="btn btn-danger">Eliminar</button>
+                <button class="btn btn-secondary close-modal-btn">Cancelar</button>
             </div>
         </div>
     </div>

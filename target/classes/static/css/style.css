@@ -29,10 +29,42 @@ body {
     min-height: 38vh;
 }
 
+/* Logo and Title */
+.logo-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.logo-title .logo {
+    width: 80px;
+    height: auto;
+}
+
+.logo-title h1 {
+    margin: 0;
+    font-size: 28px;
+    color: #333;
+}
+
 .login-container h1 {
     text-align: center;
     margin-bottom: 30px;
     color: #333;
+}
+
+/* Header Logo */
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.header-logo {
+    width: 50px;
+    height: auto;
 }
 
 .form-group {
@@ -417,6 +449,39 @@ main {
 .status-badge.occupied { background: #dc3545; color: white; }
 .status-badge.dirty { background: #007bff; color: white; }
 .status-badge.reserved { background: #ffc107; color: #333; }
+
+/* Modal Message (in-modal notifications) */
+.modal-message {
+    margin-bottom: 20px;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.modal-message .message-success {
+    background: #d4edda;
+    color: #155724;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #28a745;
+}
+
+.modal-message .message-error {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #dc3545;
+}
+
+.modal-message .message-warning {
+    background: #fff3cd;
+    color: #856404;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #ffc107;
+}
 
 /* Floor Layout */
 .floor-section {

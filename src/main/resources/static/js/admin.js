@@ -30,6 +30,29 @@ let transactionsSearchMode = false;
 
 const PAGE_SIZE = 100;
 
+// ==================== NOTIFICATION SYSTEM ====================
+
+function showNotification(message, type = 'success') {
+    // Remove existing notification
+    const existing = document.querySelector('.admin-notification');
+    if (existing) existing.remove();
+    
+    const notification = document.createElement('div');
+    notification.className = `admin-notification notification-${type}`;
+    notification.innerHTML = `
+        <span>${message}</span>
+        <button onclick="this.parentElement.remove()">&times;</button>
+    `;
+    document.body.appendChild(notification);
+    
+    // Auto remove after 4 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 4000);
+}
+
 // ==================== INITIALIZATION ====================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -79,7 +102,7 @@ function showAdminPanel() {
     if (currentUser.type === 'MANAGER') {
         // Change title to "Partes" for managers
         document.getElementById('panelTitle').textContent = '📄 Partes';
-        document.title = 'Partes - Hotel Room Management';
+        document.title = 'Partes - Hostal Malibu';
         
         // Hide admin-only tabs
         document.querySelectorAll('.admin-only-tab').forEach(tab => {
@@ -97,8 +120,8 @@ function showAdminPanel() {
         document.getElementById('partesTab').classList.remove('hidden');
     } else {
         // Admin: show all tabs and set Guests as default
-        document.getElementById('panelTitle').textContent = '🛠️ Admin Panel';
-        document.title = 'Admin Panel - Hotel Room Management';
+        document.getElementById('panelTitle').textContent = '🛠️ Panel de Administración';
+        document.title = 'Panel de Administración - Hostal Malibu';
         
         document.querySelectorAll('.admin-only-tab').forEach(tab => {
             tab.style.display = '';
@@ -427,7 +450,7 @@ async function loadPartes() {
 async function loadDailyReport() {
     const dateInput = document.getElementById('dailyDateInput').value;
     if (!dateInput) {
-        alert('Please select a date');
+        showNotification('Por favor seleccione una fecha', 'error');
         return;
     }
     
@@ -1180,7 +1203,7 @@ async function viewGuest(gid) {
         openModal('viewGuestModal');
     } catch (error) {
         console.error('Error viewing guest:', error);
-        alert('Error loading guest details');
+        showNotification('Error al cargar detalles del huésped', 'error');
     }
 }
 
@@ -1225,14 +1248,14 @@ async function saveGuest(e) {
         if (response.ok) {
             closeAllModals();
             loadGuestsPage(guestsPage);
-            alert('Guest updated successfully');
+            showNotification('Huésped actualizado exitosamente', 'success');
         } else {
             const error = await response.json();
-            alert(error.error || 'Error updating guest');
+            showNotification(error.error || 'Error al actualizar huésped', 'error');
         }
     } catch (error) {
         console.error('Error saving guest:', error);
-        alert('Error saving guest');
+        showNotification('Error al guardar huésped', 'error');
     }
 }
 
@@ -1249,14 +1272,14 @@ async function deleteGuest(gid) {
         
         if (response.ok) {
             loadGuestsPage(guestsPage);
-            alert('Guest deleted successfully');
+            showNotification('Huésped eliminado exitosamente', 'success');
         } else {
             const error = await response.json();
-            alert(error.error || 'Error deleting guest');
+            showNotification(error.error || 'Error al eliminar huésped', 'error');
         }
     } catch (error) {
         console.error('Error deleting guest:', error);
-        alert('Error deleting guest');
+        showNotification('Error al eliminar huésped', 'error');
     }
 }
 
@@ -1324,7 +1347,7 @@ async function viewRoom(rid) {
         openModal('viewGuestModal');
     } catch (error) {
         console.error('Error viewing room:', error);
-        alert('Error loading room details');
+        showNotification('Error al cargar detalles de habitación', 'error');
     }
 }
 
@@ -1360,14 +1383,14 @@ async function saveRoom(e) {
         if (response.ok) {
             closeAllModals();
             loadRooms();
-            alert('Room updated successfully');
+            showNotification('Habitación actualizada exitosamente', 'success');
         } else {
             const error = await response.json();
-            alert(error.error || 'Error updating room');
+            showNotification(error.error || 'Error al actualizar habitación', 'error');
         }
     } catch (error) {
         console.error('Error saving room:', error);
-        alert('Error saving room');
+        showNotification('Error al guardar habitación', 'error');
     }
 }
 
@@ -1384,14 +1407,14 @@ async function deleteRoom(rid) {
         
         if (response.ok) {
             loadRooms();
-            alert('Room deleted successfully');
+            showNotification('Habitación eliminada exitosamente', 'success');
         } else {
             const error = await response.json();
-            alert(error.error || 'Error deleting room');
+            showNotification(error.error || 'Error al eliminar habitación', 'error');
         }
     } catch (error) {
         console.error('Error deleting room:', error);
-        alert('Error deleting room');
+        showNotification('Error al eliminar habitación', 'error');
     }
 }
 
@@ -1429,14 +1452,14 @@ async function saveTransaction(e) {
         if (response.ok) {
             closeAllModals();
             loadTransactionsPage(transactionsPage);
-            alert('Transaction updated successfully');
+            showNotification('Transacción actualizada exitosamente', 'success');
         } else {
             const error = await response.json();
-            alert(error.error || 'Error updating transaction');
+            showNotification(error.error || 'Error al actualizar transacción', 'error');
         }
     } catch (error) {
         console.error('Error saving transaction:', error);
-        alert('Error saving transaction');
+        showNotification('Error al guardar transacción', 'error');
     }
 }
 
@@ -1452,14 +1475,14 @@ async function deleteTransaction(tid) {
         
         if (response.ok) {
             loadTransactionsPage(transactionsPage);
-            alert('Transaction deleted successfully');
+            showNotification('Transacción eliminada exitosamente', 'success');
         } else {
             const error = await response.json();
-            alert(error.error || 'Error deleting transaction');
+            showNotification(error.error || 'Error al eliminar transacción', 'error');
         }
     } catch (error) {
         console.error('Error deleting transaction:', error);
-        alert('Error deleting transaction');
+        showNotification('Error al eliminar transacción', 'error');
     }
 }
 
@@ -1542,14 +1565,14 @@ async function saveUser(e) {
         if (response.ok) {
             closeAllModals();
             loadUsers();
-            alert(isNew ? 'User created successfully' : 'User updated successfully');
+            showNotification(isNew ? 'Usuario creado exitosamente' : 'Usuario actualizado exitosamente', 'success');
         } else {
             const error = await response.json();
-            alert(error.error || 'Error saving user');
+            showNotification(error.error || 'Error al guardar usuario', 'error');
         }
     } catch (error) {
         console.error('Error saving user:', error);
-        alert('Error saving user');
+        showNotification('Error al guardar usuario', 'error');
     }
 }
 
@@ -1561,11 +1584,11 @@ async function toggleUserActive(uid) {
             loadUsers();
         } else {
             const error = await response.json();
-            alert(error.error || 'Error toggling user status');
+            showNotification(error.error || 'Error al cambiar estado del usuario', 'error');
         }
     } catch (error) {
         console.error('Error toggling user:', error);
-        alert('Error toggling user status');
+        showNotification('Error al cambiar estado del usuario', 'error');
     }
 }
 
@@ -1573,7 +1596,7 @@ function confirmDeleteUser(uid) {
     const user = users.find(u => u.uid === uid);
     
     if (user.uid === currentUser.uid) {
-        alert('You cannot delete your own account');
+        showNotification('No puede eliminar su propia cuenta', 'error');
         return;
     }
     
@@ -1588,14 +1611,14 @@ async function deleteUser(uid) {
         
         if (response.ok) {
             loadUsers();
-            alert('User deleted successfully');
+            showNotification('Usuario eliminado exitosamente', 'success');
         } else {
             const error = await response.json();
-            alert(error.error || 'Error deleting user');
+            showNotification(error.error || 'Error al eliminar usuario', 'error');
         }
     } catch (error) {
         console.error('Error deleting user:', error);
-        alert('Error deleting user');
+        showNotification('Error al eliminar usuario', 'error');
     }
 }
 
